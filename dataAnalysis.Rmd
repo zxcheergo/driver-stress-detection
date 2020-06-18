@@ -15,7 +15,7 @@ leadTime <- 1
 afterTime <- 3
 
 library(readxl)
-timeRecord <- read.csv("~/Documents/Graduate3/HFM/Group Project/实验数据/生理测量数据/生理数据时间对应表.csv", header=T)
+timeRecord <- read.csv("~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/生理测量数据/生理数据时间对应表.csv", header=T)
 p1.t1 <- c(paste0("t.p1.t1.e",0:7))
 for (i in 1:8) {
   assign(p1.t1[i], as.numeric(timeRecord[1, i+3]))
@@ -131,6 +131,124 @@ for (i in 1:20) {
 
 ```
 
+```{r helper function}
+## Gives count, mean, standard deviation, standard error of the mean, and confidence interval (default 95%).
+##   data: a data frame.
+##   measurevar: the name of a column that contains the variable to be summariezed
+##   groupvars: a vector containing names of columns that contain grouping variables
+##   na.rm: a boolean that indicates whether to ignore NA's
+##   conf.interval: the percent range of the confidence interval (default is 95%)
+summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
+                      conf.interval=.95, .drop=TRUE) {
+    library(plyr)
+
+    # New version of length which can handle NA's: if na.rm==T, don't count them
+    length2 <- function (x, na.rm=FALSE) {
+        if (na.rm) sum(!is.na(x))
+        else       length(x)
+    }
+
+    # This does the summary. For each group's data frame, return a vector with
+    # N, mean, and sd
+    datac <- ddply(data, groupvars, .drop=.drop,
+      .fun = function(xx, col) {
+        c(N    = length2(xx[[col]], na.rm=na.rm),
+          mean = mean   (xx[[col]], na.rm=na.rm),
+          sd   = sd     (xx[[col]], na.rm=na.rm)
+        )
+      },
+      measurevar
+    )
+
+    # Rename the "mean" column    
+    datac <- rename(datac, c("mean" = measurevar))
+
+    datac$se <- datac$sd / sqrt(datac$N)  # Calculate standard error of the mean
+
+    # Confidence interval multiplier for standard error
+    # Calculate t-statistic for confidence interval: 
+    # e.g., if conf.interval is .95, use .975 (above/below), and use df=N-1
+    ciMult <- qt(conf.interval/2 + .5, datac$N-1)
+    datac$ci <- datac$se * ciMult
+
+    return(datac)
+}
+
+normDataWithin <- function(data=NULL, idvar, measurevar, betweenvars=NULL,
+                           na.rm=FALSE, .drop=TRUE) {
+    library(plyr)
+
+    # Measure var on left, idvar + between vars on right of formula.
+    data.subjMean <- ddply(data, c(idvar, betweenvars), .drop=.drop,
+     .fun = function(xx, col, na.rm) {
+        c(subjMean = mean(xx[,col], na.rm=na.rm))
+      },
+      measurevar,
+      na.rm
+    )
+
+    # Put the subject means with original data
+    data <- merge(data, data.subjMean)
+
+    # Get the normalized data in a new column
+    measureNormedVar <- paste(measurevar, "_norm", sep="")
+    data[,measureNormedVar] <- data[,measurevar] - data[,"subjMean"] +
+                               mean(data[,measurevar], na.rm=na.rm)
+
+    # Remove this subject mean column
+    data$subjMean <- NULL
+
+    return(data)
+}
+summarySEwithin <- function(data=NULL, measurevar, betweenvars=NULL, withinvars=NULL,
+                            idvar=NULL, na.rm=FALSE, conf.interval=.95, .drop=TRUE) {
+
+  # Ensure that the betweenvars and withinvars are factors
+  factorvars <- vapply(data[, c(betweenvars, withinvars), drop=FALSE],
+    FUN=is.factor, FUN.VALUE=logical(1))
+
+  if (!all(factorvars)) {
+    nonfactorvars <- names(factorvars)[!factorvars]
+    message("Automatically converting the following non-factors to factors: ",
+            paste(nonfactorvars, collapse = ", "))
+    data[nonfactorvars] <- lapply(data[nonfactorvars], factor)
+  }
+
+  # Get the means from the un-normed data
+  datac <- summarySE(data, measurevar, groupvars=c(betweenvars, withinvars),
+                     na.rm=na.rm, conf.interval=conf.interval, .drop=.drop)
+
+  # Drop all the unused columns (these will be calculated with normed data)
+  datac$sd <- NULL
+  datac$se <- NULL
+  datac$ci <- NULL
+
+  # Norm each subject's data
+  ndata <- normDataWithin(data, idvar, measurevar, betweenvars, na.rm, .drop=.drop)
+
+  # This is the name of the new column
+  measurevar_n <- paste(measurevar, "_norm", sep="")
+
+  # Collapse the normed data - now we can treat between and within vars the same
+  ndatac <- summarySE(ndata, measurevar_n, groupvars=c(betweenvars, withinvars),
+                      na.rm=na.rm, conf.interval=conf.interval, .drop=.drop)
+
+  # Apply correction from Morey (2008) to the standard error and confidence interval
+  #  Get the product of the number of conditions of within-S variables
+  nWithinGroups    <- prod(vapply(ndatac[,withinvars, drop=FALSE], FUN=nlevels,
+                           FUN.VALUE=numeric(1)))
+  correctionFactor <- sqrt( nWithinGroups / (nWithinGroups-1) )
+
+  # Apply the correction factor
+  ndatac$sd <- ndatac$sd * correctionFactor
+  ndatac$se <- ndatac$se * correctionFactor
+  ndatac$ci <- ndatac$ci * correctionFactor
+
+  # Combine the un-normed means with the normed results
+  merge(datac, ndatac)
+}
+```
+
 
 
 ## The perceived pressure of the 8 events
@@ -140,22 +258,19 @@ Here we used the tool of repeated measure ANOVA.
 
 ```{r}
 library(readxl)
-subjective <- read_excel("~/Documents/Graduate3/HFM/Group Project/dataAnalysis/subjective.xls")
+subjective <- read_excel("~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/主观测量/subjective.xlsx")
 head(subjective)
 subjective <- data.frame(subjective)
 
 library(reshape)
-longData <- melt(subjective, id = "Participant", measured = c("S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8"))
-names(longData) <- c("participant", "scenario", "pressure")
+longData <- melt(subjective, id = "Participant", measured = c("E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8"))
+names(longData) <- c("participant", "event", "pressure")
 longData$participant <- factor(longData$participant)
+longData$event <- factor(longData$event)
+graph.subjective <- summarySEwithin(longData, measurevar = "pressure", withinvars = "event", idvar = "participant", na.rm = T, conf.interval = .95)
+graph.subjective
 
-library(ez)
-model <- ezANOVA(data = longData, dv = .(pressure), wid = .(participant), within = .(scenario), detailed = TRUE, type = 8)
-model
 
-# Post hoc tests
-
-pairwise.t.test(longData$pressure, longData$scenario, paired = TRUE, p.adjust.method = "bonferroni")
 ```
 
 ## The physiological measurement data
@@ -1531,8 +1646,8 @@ aT = 2
 QT = 1
 HT = 10
 # Participant1
-listOfStressTime <- read.csv("~/Documents/Graduate3/HFM/Group Project/实验数据/面部特征/listOfStressTime.csv", header=T)
-listOfEventTime <- read.csv("~/Documents/Graduate3/HFM/Group Project/实验数据/面部特征/listOfEventTime.csv", header=T)
+listOfStressTime <- read.csv("~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/面部特征/listOfStressTime.csv", header=T)
+listOfEventTime <- read.csv("~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/面部特征/listOfEventTime.csv", header=T)
 EventTime <- listOfEventTime[1,]
 StressTime <- listOfStressTime[1,]
 stressDemarcate <- function(time) {
@@ -1566,7 +1681,7 @@ facial.p1.t2 <- mutate(facial.p1.t2, accurateTime = as.character(facial.p1.t2$ac
 stressLevel <- sapply(facial.p1.t2$timeStamp, stressDemarcate)
 facial.p1.t2 <-cbind(facial.p1.t2, stressLevel)
 facial.p1.t2.L <- filter(facial.p1.t2, stressLevel == 1)
-write.csv(facial.p1.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p1.t2.L.csv")
+write.csv(facial.p1.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p1.t2.L.csv")
 ```
 
 
@@ -1577,7 +1692,7 @@ facial.p1.t1 <- mutate(facial.p1.t1, accurateTime = as.character(facial.p1.t1$ac
 stressLevel <- sapply(facial.p1.t1$timeStamp, stressDemarcate2)
 facial.p1.t1 <- cbind(facial.p1.t1, stressLevel)
 facial.p1.t1.L <- filter(facial.p1.t1, stressLevel == 0)
-write.csv(facial.p1.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p1.t1.L.csv")
+write.csv(facial.p1.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p1.t1.L.csv")
 
 
 ```
@@ -1588,8 +1703,8 @@ lT = 0.5
 aT = 2
 QT = 1
 HT = 10
-listOfStressTime <- read.csv("~/Documents/Graduate3/HFM/Group Project/实验数据/面部特征/listOfStressTime.csv", header=T)
-listOfEventTime <- read.csv("~/Documents/Graduate3/HFM/Group Project/实验数据/面部特征/listOfEventTime.csv", header=T)
+listOfStressTime <- read.csv("~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/面部特征/listOfStressTime.csv", header=T)
+listOfEventTime <- read.csv("~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/面部特征/listOfEventTime.csv", header=T)
 EventTime <- listOfEventTime[2,]
 StressTime <- listOfStressTime[2,]
 stressDemarcate <- function(time) {
@@ -1623,14 +1738,14 @@ facial.p2.t2 <- mutate(facial.p2.t2, accurateTime = as.character(facial.p2.t2$ac
 stressLevel <- sapply(facial.p2.t2$timeStamp, stressDemarcate)
 facial.p2.t2 <-cbind(facial.p2.t2, stressLevel)
 facial.p2.t2.L <- filter(facial.p2.t2, stressLevel == 1)
-write.csv(facial.p2.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p2.t2.L.csv")
+write.csv(facial.p2.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p2.t2.L.csv")
 
 facial.p2.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/201.csv") 
 facial.p2.t1 <- mutate(facial.p2.t1, accurateTime = as.character(facial.p2.t1$accurateTime)) %>% mutate(timeStamp = timeStamp - as.numeric(substr(facial.p2.t1$accurateTime, 1, 7))*3600*1000)
 stressLevel <- sapply(facial.p2.t1$timeStamp, stressDemarcate2)
 facial.p2.t1 <- cbind(facial.p2.t1, stressLevel)
 facial.p2.t1.L <- filter(facial.p2.t1, stressLevel == 0)
-write.csv(facial.p2.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p2.t1.L.csv")
+write.csv(facial.p2.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p2.t1.L.csv")
 
 
 
@@ -1642,14 +1757,14 @@ facial.p3.t2 <- mutate(facial.p3.t2, accurateTime = as.character(facial.p3.t2$ac
 stressLevel <- sapply(facial.p3.t2$timeStamp, stressDemarcate)
 facial.p3.t2 <-cbind(facial.p3.t2, stressLevel)
 facial.p3.t2.L <- filter(facial.p3.t2, stressLevel == 1)
-write.csv(facial.p3.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p3.t2.L.csv")
+write.csv(facial.p3.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p3.t2.L.csv")
 
 facial.p3.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/301.csv") 
 facial.p3.t1 <- mutate(facial.p3.t1, accurateTime = as.character(facial.p3.t1$accurateTime)) %>% mutate(timeStamp = timeStamp - as.numeric(substr(facial.p3.t1$accurateTime, 1, 7))*3600*1000)
 stressLevel <- sapply(facial.p3.t1$timeStamp, stressDemarcate2)
 facial.p3.t1 <- cbind(facial.p3.t1, stressLevel)
 facial.p3.t1.L <- filter(facial.p3.t1, stressLevel == 0)
-write.csv(facial.p3.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p3.t1.L.csv")
+write.csv(facial.p3.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p3.t1.L.csv")
 
 # Participant 4
 
@@ -1661,14 +1776,14 @@ facial.p4.t2 <- mutate(facial.p4.t2, accurateTime = as.character(facial.p4.t2$ac
 stressLevel <- sapply(facial.p4.t2$timeStamp, stressDemarcate)
 facial.p4.t2 <-cbind(facial.p4.t2, stressLevel)
 facial.p4.t2.L <- filter(facial.p4.t2, stressLevel == 1)
-write.csv(facial.p4.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p4.t2.L.csv")
+write.csv(facial.p4.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p4.t2.L.csv")
 
 facial.p4.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/401.csv") 
 facial.p4.t1 <- mutate(facial.p4.t1, accurateTime = as.character(facial.p4.t1$accurateTime)) %>% mutate(timeStamp = timeStamp - as.numeric(substr(facial.p4.t1$accurateTime, 1, 7))*3600*1000)
 stressLevel <- sapply(facial.p4.t1$timeStamp, stressDemarcate2)
 facial.p4.t1 <- cbind(facial.p4.t1, stressLevel)
 facial.p4.t1.L <- filter(facial.p4.t1, stressLevel == 0)
-write.csv(facial.p4.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p4.t1.L.csv")
+write.csv(facial.p4.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p4.t1.L.csv")
 
 
 
@@ -1681,14 +1796,14 @@ facial.p5.t2 <- mutate(facial.p5.t2, accurateTime = as.character(facial.p5.t2$ac
 stressLevel <- sapply(facial.p5.t2$timeStamp, stressDemarcate)
 facial.p5.t2 <-cbind(facial.p5.t2, stressLevel)
 facial.p5.t2.L <- filter(facial.p5.t2, stressLevel == 1)
-write.csv(facial.p5.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p5.t2.L.csv")
+write.csv(facial.p5.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p5.t2.L.csv")
 
 facial.p5.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/501.csv") 
 facial.p5.t1 <- mutate(facial.p5.t1, accurateTime = as.character(facial.p5.t1$accurateTime)) %>% mutate(timeStamp = timeStamp - as.numeric(substr(facial.p5.t1$accurateTime, 1, 7))*3600*1000)
 stressLevel <- sapply(facial.p5.t1$timeStamp, stressDemarcate2)
 facial.p5.t1 <- cbind(facial.p5.t1, stressLevel)
 facial.p5.t1.L <- filter(facial.p5.t1, stressLevel == 0)
-write.csv(facial.p5.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p5.t1.L.csv")
+write.csv(facial.p5.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p5.t1.L.csv")
 
 
 # Participant 6
@@ -1699,14 +1814,14 @@ facial.p6.t2 <- mutate(facial.p6.t2, accurateTime = as.character(facial.p6.t2$ac
 stressLevel <- sapply(facial.p6.t2$timeStamp, stressDemarcate)
 facial.p6.t2 <-cbind(facial.p6.t2, stressLevel)
 facial.p6.t2.L <- filter(facial.p6.t2, stressLevel == 1)
-write.csv(facial.p6.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p6.t2.L.csv")
+write.csv(facial.p6.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p6.t2.L.csv")
 
 facial.p6.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/601.csv") 
 facial.p6.t1 <- mutate(facial.p6.t1, accurateTime = as.character(facial.p6.t1$accurateTime)) %>% mutate(timeStamp = timeStamp - as.numeric(substr(facial.p6.t1$accurateTime, 1, 7))*3600*1000)
 stressLevel <- sapply(facial.p6.t1$timeStamp, stressDemarcate2)
 facial.p6.t1 <- cbind(facial.p6.t1, stressLevel)
 facial.p6.t1.L <- filter(facial.p6.t1, stressLevel == 0)
-write.csv(facial.p6.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p6.t1.L.csv")
+write.csv(facial.p6.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p6.t1.L.csv")
 
 # Participant 7
 
@@ -1717,14 +1832,14 @@ facial.p7.t2 <- mutate(facial.p7.t2, accurateTime = as.character(facial.p7.t2$ac
 stressLevel <- sapply(facial.p7.t2$timeStamp, stressDemarcate)
 facial.p7.t2 <-cbind(facial.p7.t2, stressLevel)
 facial.p7.t2.L <- filter(facial.p7.t2, stressLevel == 1)
-write.csv(facial.p7.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p7.t2.L.csv")
+write.csv(facial.p7.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p7.t2.L.csv")
 
 facial.p7.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/701.csv") 
 facial.p7.t1 <- mutate(facial.p7.t1, accurateTime = as.character(facial.p7.t1$accurateTime)) %>% mutate(timeStamp = timeStamp - as.numeric(substr(facial.p7.t1$accurateTime, 1, 7))*3600*1000)
 stressLevel <- sapply(facial.p7.t1$timeStamp, stressDemarcate2)
 facial.p7.t1 <- cbind(facial.p7.t1, stressLevel)
 facial.p7.t1.L <- filter(facial.p7.t1, stressLevel == 0)
-write.csv(facial.p7.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p7.t1.L.csv")
+write.csv(facial.p7.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p7.t1.L.csv")
 
 
 #Participant 8
@@ -1735,14 +1850,14 @@ facial.p8.t2 <- mutate(facial.p8.t2, accurateTime = as.character(facial.p8.t2$ac
 stressLevel <- sapply(facial.p8.t2$timeStamp, stressDemarcate)
 facial.p8.t2 <-cbind(facial.p8.t2, stressLevel)
 facial.p8.t2.L <- filter(facial.p8.t2, stressLevel == 1)
-write.csv(facial.p8.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p8.t2.L.csv")
+write.csv(facial.p8.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p8.t2.L.csv")
 
 facial.p8.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/801.csv") 
 facial.p8.t1 <- mutate(facial.p8.t1, accurateTime = as.character(facial.p8.t1$accurateTime)) %>% mutate(timeStamp = timeStamp - as.numeric(substr(facial.p8.t1$accurateTime, 1, 7))*3600*1000)
 stressLevel <- sapply(facial.p8.t1$timeStamp, stressDemarcate2)
 facial.p8.t1 <- cbind(facial.p8.t1, stressLevel)
 facial.p8.t1.L <- filter(facial.p8.t1, stressLevel == 0)
-write.csv(facial.p8.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p8.t1.L.csv")
+write.csv(facial.p8.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p8.t1.L.csv")
 
 # Participant 9
 
@@ -1753,14 +1868,14 @@ facial.p9.t2 <- mutate(facial.p9.t2, accurateTime = as.character(facial.p9.t2$ac
 stressLevel <- sapply(facial.p9.t2$timeStamp, stressDemarcate)
 facial.p9.t2 <-cbind(facial.p9.t2, stressLevel)
 facial.p9.t2.L <- filter(facial.p9.t2, stressLevel == 1)
-write.csv(facial.p9.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p9.t2.L.csv")
+write.csv(facial.p9.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p9.t2.L.csv")
 
 facial.p9.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/901.csv") 
 facial.p9.t1 <- mutate(facial.p9.t1, accurateTime = as.character(facial.p9.t1$accurateTime)) %>% mutate(timeStamp = timeStamp - as.numeric(substr(facial.p9.t1$accurateTime, 1, 7))*3600*1000)
 stressLevel <- sapply(facial.p9.t1$timeStamp, stressDemarcate2)
 facial.p9.t1 <- cbind(facial.p9.t1, stressLevel)
 facial.p9.t1.L <- filter(facial.p9.t1, stressLevel == 0)
-write.csv(facial.p9.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p9.t1.L.csv")
+write.csv(facial.p9.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p9.t1.L.csv")
 
 
 # Participant 10
@@ -1771,14 +1886,14 @@ facial.p10.t2 <- mutate(facial.p10.t2, accurateTime = as.character(facial.p10.t2
 stressLevel <- sapply(facial.p10.t2$timeStamp, stressDemarcate)
 facial.p10.t2 <-cbind(facial.p10.t2, stressLevel)
 facial.p10.t2.L <- filter(facial.p10.t2, stressLevel == 1)
-write.csv(facial.p10.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p10.t2.L.csv")
+write.csv(facial.p10.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p10.t2.L.csv")
 
 facial.p10.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/1001.csv") 
 facial.p10.t1 <- mutate(facial.p10.t1, accurateTime = as.character(facial.p10.t1$accurateTime)) %>% mutate(timeStamp = timeStamp - as.numeric(substr(facial.p10.t1$accurateTime, 1, 7))*3600*1000)
 stressLevel <- sapply(facial.p10.t1$timeStamp, stressDemarcate2)
 facial.p10.t1 <- cbind(facial.p10.t1, stressLevel)
 facial.p10.t1.L <- filter(facial.p10.t1, stressLevel == 0)
-write.csv(facial.p10.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p10.t1.L.csv")
+write.csv(facial.p10.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p10.t1.L.csv")
 
 ```
 
@@ -1798,20 +1913,20 @@ facial.p9.L <- rbind(facial.p9.t1.L, facial.p9.t2.L)
 facial.p10.L <- rbind(facial.p10.t1.L, facial.p10.t2.L)
 facial.pressure <- rbind(facial.p2.t2.L, facial.p3.t2.L, facial.p4.t2.L, facial.p5.t2.L, facial.p6.t2.L, facial.p7.t2.L, facial.p8.t2.L, facial.p9.t2.L, facial.p10.t2.L)
 
-write.csv(facial.p2.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p2.L.csv")
-write.csv(facial.p3.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p3.L.csv")
-write.csv(facial.p4.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p4.L.csv")
-write.csv(facial.p5.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p5.L.csv")
-write.csv(facial.p6.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p6.L.csv")
-write.csv(facial.p7.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p7.L.csv")
-write.csv(facial.p8.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p8.L.csv")
-write.csv(facial.p9.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p9.L.csv")
-write.csv(facial.p10.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p10.L.csv")
-write.csv(facial.pressure, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.pressure.csv")
+write.csv(facial.p2.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p2.L.csv")
+write.csv(facial.p3.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p3.L.csv")
+write.csv(facial.p4.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p4.L.csv")
+write.csv(facial.p5.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p5.L.csv")
+write.csv(facial.p6.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p6.L.csv")
+write.csv(facial.p7.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p7.L.csv")
+write.csv(facial.p8.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p8.L.csv")
+write.csv(facial.p9.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p9.L.csv")
+write.csv(facial.p10.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p10.L.csv")
+write.csv(facial.pressure, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.pressure.csv")
 
 
 facial.all <- rbind(facial.p2.L, facial.p3.L, facial.p4.L, facial.p5.L, facial.p6.L, facial.p7.L, facial.p8.L, facial.p9.L, facial.p10.L)
-write.csv(facial.all, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.all.csv")
+write.csv(facial.all, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.all.csv")
 ```
 
 
@@ -1821,7 +1936,7 @@ write.csv(facial.all, file = "~/Documents/Graduate3/HFM/Group Project/实验数�
 ```{r}
 library(pastecs)
 library(reshape)
-PCA <- read.csv("~/Documents/Graduate3/HFM/Group Project/实验数据/面部特征/PCA.csv", header=FALSE)
+PCA <- read.csv("~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/面部特征/PCA.csv", header=FALSE)
 PCA <- PCA[,1:52]
 PCA.summary <- stat.desc(PCA, basic = T, desc=T, norm = F, p=0.95)
 PCA.mean <- t(PCA.summary[9,])
