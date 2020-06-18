@@ -1,0 +1,1844 @@
+---
+title: "HF/E Measurement"
+author: "zhouxin-2018310615"
+date: "12/23/2019"
+output: 
+  html_document: 
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#DEFINE
+leadTime <- 1
+afterTime <- 3
+
+library(readxl)
+timeRecord <- read.csv("~/Documents/Graduate3/HFM/Group Project/实验数据/生理测量数据/生理数据时间对应表.csv", header=T)
+p1.t1 <- c(paste0("t.p1.t1.e",0:7))
+for (i in 1:8) {
+  assign(p1.t1[i], as.numeric(timeRecord[1, i+3]))
+}
+
+p1.t2 <- c(paste0("t.p1.t2.e",0:7))
+for (i in 1:8) {
+  assign(p1.t2[i], as.numeric(timeRecord[2, i+3]))
+}
+
+p2.t1 <- c(paste0("t.p2.t1.e",0:7))
+for (i in 1:8) {
+  assign(p2.t1[i], as.numeric(timeRecord[3, i+3]))
+}
+
+p2.t2 <- c(paste0("t.p2.t2.e",0:7))
+for (i in 1:8) {
+  assign(p2.t2[i], as.numeric(timeRecord[4, i+3]))
+}
+
+p3.t1 <- c(paste0("t.p3.t1.e",0:7))
+for (i in 1:8) {
+  assign(p3.t1[i], as.numeric(timeRecord[5, i+3]))
+}
+
+p3.t2 <- c(paste0("t.p3.t2.e",0:7))
+for (i in 1:8) {
+  assign(p3.t2[i], as.numeric(timeRecord[6, i+3]))
+}
+
+p4.t1 <- c(paste0("t.p4.t1.e",0:7))
+for (i in 1:8) {
+  assign(p4.t1[i], as.numeric(timeRecord[7, i+3]))
+}
+
+p4.t2 <- c(paste0("t.p4.t2.e",0:7))
+for (i in 1:8) {
+  assign(p4.t2[i], as.numeric(timeRecord[8, i+3]))
+}
+
+p5.t1 <- c(paste0("t.p5.t1.e",0:7))
+for (i in 1:8) {
+  assign(p5.t1[i], as.numeric(timeRecord[9, i+3]))
+}
+
+p5.t2 <- c(paste0("t.p5.t2.e",0:7))
+for (i in 1:8) {
+  assign(p5.t2[i], as.numeric(timeRecord[10, i+3]))
+}
+
+p6.t1 <- c(paste0("t.p6.t1.e",0:7))
+for (i in 1:8) {
+  assign(p6.t1[i], as.numeric(timeRecord[11, i+3]))
+}
+
+p6.t2 <- c(paste0("t.p6.t2.e",0:7))
+for (i in 1:8) {
+  assign(p6.t2[i], as.numeric(timeRecord[12, i+3]))
+}
+
+p7.t1 <- c(paste0("t.p7.t1.e",0:7))
+for (i in 1:8) {
+  assign(p7.t1[i], as.numeric(timeRecord[13, i+3]))
+}
+
+p7.t2 <- c(paste0("t.p7.t2.e",0:7))
+for (i in 1:8) {
+  assign(p7.t2[i], as.numeric(timeRecord[14, i+3]))
+}
+
+p8.t1 <- c(paste0("t.p8.t1.e",0:7))
+for (i in 1:8) {
+  assign(p8.t1[i], as.numeric(timeRecord[15, i+3]))
+}
+
+p8.t2 <- c(paste0("t.p8.t2.e",0:7))
+for (i in 1:8) {
+  assign(p8.t2[i], as.numeric(timeRecord[16, i+3]))
+}
+
+p9.t1 <- c(paste0("t.p9.t1.e",0:7))
+for (i in 1:8) {
+  assign(p9.t1[i], as.numeric(timeRecord[17, i+3]))
+}
+
+p9.t2 <- c(paste0("t.p9.t2.e",0:7))
+for (i in 1:8) {
+  assign(p9.t2[i], as.numeric(timeRecord[18, i+3]))
+}
+
+p10.t1 <- c(paste0("t.p10.t1.e",0:7))
+for (i in 1:8) {
+  assign(p10.t1[i], as.numeric(timeRecord[19, i+3]))
+}
+
+p10.t2 <- c(paste0("t.p10.t2.e",0:7))
+for (i in 1:8) {
+  assign(p10.t2[i], as.numeric(timeRecord[20, i+3]))
+}
+scenario <- c(paste0("scenario.", 1:20))
+defineTimeOfScenario <- function(x) {
+  time <- as.character(x)
+  min <- as.numeric(substr(time, 4, 5))
+  sec <- as.numeric(substr(time, 7, 8))
+  result <- min * 60 + sec
+  return(result)
+}
+for (i in 1:20) {
+  assign(scenario[i], defineTimeOfScenario(timeRecord[i, 12]))
+}
+
+
+
+```
+
+
+
+## The perceived pressure of the 8 events
+
+First, we need to explore the subjective evaluation of the 8 events. The data are the participants' subjective evaluation of a scale of 0~100.
+Here we used the tool of repeated measure ANOVA.
+
+```{r}
+library(readxl)
+subjective <- read_excel("~/Documents/Graduate3/HFM/Group Project/dataAnalysis/subjective.xls")
+head(subjective)
+subjective <- data.frame(subjective)
+
+library(reshape)
+longData <- melt(subjective, id = "Participant", measured = c("S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8"))
+names(longData) <- c("participant", "scenario", "pressure")
+longData$participant <- factor(longData$participant)
+
+library(ez)
+model <- ezANOVA(data = longData, dv = .(pressure), wid = .(participant), within = .(scenario), detailed = TRUE, type = 8)
+model
+
+# Post hoc tests
+
+pairwise.t.test(longData$pressure, longData$scenario, paired = TRUE, p.adjust.method = "bonferroni")
+```
+
+## The physiological measurement data
+
+### Participant 1
+
+```{r}
+# data preprocessing
+library(dplyr)
+library(reshape)
+psy.p1.t1 <- read.delim("/Volumes/DATA/人因学测量用素材/实验数据/生理测量数据/处理后数据/01-01.txt", header=FALSE) %>%
+  select(c(V1, V2, V3, V4)) %>%  rename(mins = V1, PPG = V2, HR = V3, EDA = V4) %>%
+  mutate(Time = mins * 60)
+
+psy.p1.t2 <- read.delim("/Volumes/DATA/人因学测量用素材/实验数据/生理测量数据/处理后数据/01-02.txt", header=FALSE) %>%
+  select(c(V1, V2, V3, V4)) %>% rename(mins = V1, PPG = V2, HR = V3, EDA = V4) %>%
+  mutate(Time = mins * 60)
+
+psy.p1.t1.events <- c(paste0("psy.p1.t1.event", 1:7))
+for (i in 1:7) {
+  assign(psy.p1.t1.events[i], subset(psy.p1.t1, Time > get(p1.t1[1]) + get(p1.t1[i + 1]) - leadTime & Time < get(p1.t1[1]) + get(p1.t1[i + 1]) + afterTime) %>% select(c(PPG, HR, EDA)) %>% mutate(PPG = scale(PPG), HR = scale(HR), EDA = scale(EDA)))
+}
+
+psy.p1.t2.events <- c(paste0("psy.p1.t2.event", 1:7))
+for (i in 1:7) {
+  assign(psy.p1.t2.events[i], subset(psy.p1.t2, Time > get(p1.t2[1]) + get(p1.t2[i + 1]) - leadTime & Time < get(p1.t2[1]) + get(p1.t2[i + 1]) + afterTime) %>% select(c(PPG, HR, EDA)) %>% mutate(PPG = scale(PPG), HR = scale(HR), EDA = scale(EDA)))
+}
+
+
+```
+
+
+### Participant 2
+
+```{r}
+# data preprocessing
+library(dplyr)
+psy.p2.t1 <- read.delim("/Volumes/DATA/人因学测量用素材/实验数据/生理测量数据/处理后数据/02-01.txt", header=FALSE) %>%
+  select(c(V1, V2, V3, V4)) %>% rename(mins = V1, PPG = V2, HR = V3, EDA = V4) %>%
+  mutate(Time = mins * 60)
+psy.p2.t1.read <- subset(psy.p2.t1, Time > 9.109 & Time < 329.421) %>%
+  select(c(PPG, HR, EDA)) %>%
+  apply(2, mean)
+
+psy.p2.t2 <- read.delim("/Volumes/DATA/人因学测量用素材/实验数据/生理测量数据/处理后数据/02-02.txt", header=FALSE) %>%
+  select(c(V1, V2, V3, V4)) %>% rename(mins = V1, PPG = V2, HR = V3, EDA = V4) %>%
+  mutate(Time = mins * 60)
+psy.p2.t2.read <- subset(psy.p2.t2, Time > 36.601 & Time < 416.39) %>%
+  select(c(PPG, HR, EDA)) %>%
+  apply(2, mean)
+
+psy.p2.t1.events <- c(paste0("psy.p2.t1.event", 1:7))
+for (i in 1:7) {
+  assign(psy.p2.t1.events[i], subset(psy.p2.t1, Time > get(p2.t1[1]) + get(p2.t1[i + 1]) - leadTime & Time < get(p2.t1[1]) + get(p2.t1[i + 1]) + afterTime) %>% select(c(PPG, HR, EDA)) %>% mutate(PPG = scale(PPG), HR = scale(HR), EDA = scale(EDA)))
+}
+
+psy.p2.t2.events <- c(paste0("psy.p2.t2.event", 1:7))
+for (i in 1:7) {
+  assign(psy.p2.t2.events[i], subset(psy.p2.t2, Time > get(p2.t2[1]) + get(p2.t2[i + 1]) - leadTime & Time < get(p2.t2[1]) + get(p2.t2[i + 1]) + afterTime) %>% select(c(PPG, HR, EDA)) %>% mutate(PPG = scale(PPG), HR = scale(HR), EDA = scale(EDA)))
+}
+```
+
+### Participant 3
+
+```{r}
+# data preprocessing
+library(dplyr)
+psy.p3.t1 <- read.delim("/Volumes/DATA/人因学测量用素材/实验数据/生理测量数据/处理后数据/03-01.txt", header=FALSE) %>%
+  select(c(V1, V2, V3, V4)) %>% rename(mins = V1, PPG = V2, HR = V3, EDA = V4) %>%
+  mutate(Time = mins * 60)
+psy.p3.t1.read <- subset(psy.p3.t1, Time > 58.074 & Time < 313.64) %>%
+  select(c(PPG, HR, EDA)) %>%
+  apply(2, mean)
+
+psy.p3.t2 <- read.delim("/Volumes/DATA/人因学测量用素材/实验数据/生理测量数据/处理后数据/03-02.txt", header=FALSE) %>%
+  select(c(V1, V2, V3, V4)) %>% rename(mins = V1, PPG = V2, HR = V3, EDA = V4) %>%
+  mutate(Time = mins * 60)
+psy.p3.t2.read <- subset(psy.p3.t2, Time > 16.289 & Time < 325.921) %>%
+  select(c(PPG, HR, EDA)) %>%
+  apply(2, mean)
+
+psy.p3.t1.events <- c(paste0("psy.p3.t1.event", 1:7))
+for (i in 1:7) {
+  assign(psy.p3.t1.events[i], subset(psy.p3.t1, Time > get(p3.t1[1]) + get(p3.t1[i + 1]) - leadTime & Time < get(p3.t1[1]) + get(p3.t1[i + 1]) + afterTime) %>% select(c(PPG, HR, EDA)) %>% mutate(PPG = scale(PPG), HR = scale(HR), EDA = scale(EDA)))
+}
+
+psy.p3.t2.events <- c(paste0("psy.p3.t2.event", 1:7))
+for (i in 1:7) {
+  assign(psy.p3.t2.events[i], subset(psy.p3.t2, Time > get(p3.t2[1]) + get(p3.t2[i + 1]) - leadTime & Time < get(p3.t2[1]) + get(p3.t2[i + 1]) + afterTime) %>% select(c(PPG, HR, EDA)) %>% mutate(PPG = scale(PPG), HR = scale(HR), EDA = scale(EDA)))
+}
+
+```
+
+### Participant 4
+
+```{r}
+# data preprocessing
+library(dplyr)
+psy.p4.t1 <- read.delim("/Volumes/DATA/人因学测量用素材/实验数据/生理测量数据/处理后数据/04-01.txt", header=FALSE) %>%
+  select(c(V1, V2, V3, V4)) %>% rename(mins = V1, PPG = V2, HR = V3, EDA = V4) %>%
+  mutate(Time = mins * 60)
+psy.p4.t1.read <- subset(psy.p4.t1, Time > 117.097 & Time < 409.359) %>%
+  select(c(PPG, HR, EDA)) %>%
+  apply(2, mean)
+
+psy.p4.t2 <- read.delim("/Volumes/DATA/人因学测量用素材/实验数据/生理测量数据/处理后数据/04-02.txt", header=FALSE) %>%
+  select(c(V1, V2, V3, V4)) %>% rename(mins = V1, PPG = V2, HR = V3, EDA = V4) %>%
+  mutate(Time = mins * 60)
+psy.p4.t2.read <- subset(psy.p4.t2, Time > 61.391 & Time < 385.66) %>%
+  select(c(PPG, HR, EDA)) %>%
+  apply(2, mean)
+
+psy.p4.t1.events <- c(paste0("psy.p4.t1.event", 1:7))
+for (i in 1:7) {
+  assign(psy.p4.t1.events[i], subset(psy.p4.t1, Time > get(p4.t1[1]) + get(p4.t1[i + 1]) - leadTime & Time < get(p4.t1[1]) + get(p4.t1[i + 1]) + afterTime) %>% select(c(PPG, HR, EDA)) %>% mutate(PPG = scale(PPG), HR = scale(HR), EDA = scale(EDA)))
+}
+
+psy.p4.t2.events <- c(paste0("psy.p4.t2.event", 1:7))
+for (i in 1:7) {
+  assign(psy.p4.t2.events[i], subset(psy.p4.t2, Time > get(p4.t2[1]) + get(p4.t2[i + 1]) - leadTime & Time < get(p4.t2[1]) + get(p4.t2[i + 1]) + afterTime) %>% select(c(PPG, HR, EDA)) %>% mutate(PPG = scale(PPG), HR = scale(HR), EDA = scale(EDA)))
+}
+
+
+```
+
+### Participant 5
+
+```{r}
+# data preprocessing
+library(dplyr)
+psy.p5.t1 <- read.delim("/Volumes/DATA/人因学测量用素材/实验数据/生理测量数据/处理后数据/05-01.txt", header=FALSE) %>%
+  select(c(V1, V2, V3, V4)) %>% rename(mins = V1, PPG = V2, HR = V3, EDA = V4) %>%
+  mutate(Time = mins * 60)
+psy.p5.t1.read <- subset(psy.p5.t1, Time > 62.253 & Time < 378.125) %>%
+  select(c(PPG, HR, EDA)) %>%
+  apply(2, mean)
+
+psy.p5.t2 <- read.delim("/Volumes/DATA/人因学测量用素材/实验数据/生理测量数据/处理后数据/05-02.txt", header=FALSE) %>%
+  select(c(V1, V2, V3, V4)) %>% rename(mins = V1, PPG = V2, HR = V3, EDA = V4) %>%
+  mutate(Time = mins * 60)
+psy.p5.t2.read <- subset(psy.p5.t2, Time > 15.578 & Time < 345.625) %>%
+  select(c(PPG, HR, EDA)) %>%
+  apply(2, mean)
+
+psy.p5.t1.events <- c(paste0("psy.p5.t1.event", 1:7))
+for (i in 1:7) {
+  assign(psy.p5.t1.events[i], subset(psy.p5.t1, Time > get(p5.t1[1]) + get(p5.t1[i + 1]) - leadTime & Time < get(p5.t1[1]) + get(p5.t1[i + 1]) + afterTime) %>% select(c(PPG, HR, EDA)) %>% mutate(PPG = scale(PPG), HR = scale(HR), EDA = scale(EDA)))
+}
+
+psy.p5.t2.events <- c(paste0("psy.p5.t2.event", 1:7))
+for (i in 1:7) {
+  assign(psy.p5.t2.events[i], subset(psy.p5.t2, Time > get(p5.t2[1]) + get(p5.t2[i + 1]) - leadTime & Time < get(p5.t2[1]) + get(p5.t2[i + 1]) + afterTime) %>% select(c(PPG, HR, EDA)) %>% mutate(PPG = scale(PPG), HR = scale(HR), EDA = scale(EDA)))
+}
+```
+
+
+### Participant 6
+
+```{r}
+# data preprocessing
+library(dplyr)
+psy.p6.t1 <- read.delim("/Volumes/DATA/人因学测量用素材/实验数据/生理测量数据/处理后数据/06-01.txt", header=FALSE) %>%
+  select(c(V1, V2, V3, V4)) %>% rename(mins = V1, PPG = V2, HR = V3, EDA = V4) %>%
+  mutate(Time = mins * 60)
+psy.p6.t1.read <- subset(psy.p6.t1, Time > 51.039 & Time < 354.984) %>%
+  select(c(PPG, HR, EDA)) %>%
+  apply(2, mean)
+
+psy.p6.t2 <- read.delim("/Volumes/DATA/人因学测量用素材/实验数据/生理测量数据/处理后数据/06-02.txt", header=FALSE) %>%
+  select(c(V1, V2, V3, V4)) %>% rename(mins = V1, PPG = V2, HR = V3, EDA = V4) %>%
+  mutate(Time = mins * 60)
+psy.p6.t2.read <- subset(psy.p6.t2, Time > 75.746 & Time < 458.179) %>%
+  select(c(PPG, HR, EDA)) %>%
+  apply(2, mean)
+psy.p6.t1.events <- c(paste0("psy.p6.t1.event", 1:7))
+for (i in 1:7) {
+  assign(psy.p6.t1.events[i], subset(psy.p6.t1, Time > get(p6.t1[1]) + get(p6.t1[i + 1]) - leadTime & Time < get(p6.t1[1]) + get(p6.t1[i + 1]) + afterTime) %>% select(c(PPG, HR, EDA)) %>% mutate(PPG = scale(PPG), HR = scale(HR), EDA = scale(EDA)))
+}
+
+psy.p6.t2.events <- c(paste0("psy.p6.t2.event", 1:7))
+for (i in 1:7) {
+  assign(psy.p6.t2.events[i], subset(psy.p6.t2, Time > get(p6.t2[1]) + get(p6.t2[i + 1]) - leadTime & Time < get(p6.t2[1]) + get(p6.t2[i + 1]) + afterTime) %>% select(c(PPG, HR, EDA)) %>% mutate(PPG = scale(PPG), HR = scale(HR), EDA = scale(EDA)))
+}
+
+```
+
+### Participant 7
+
+```{r}
+# data preprocessing
+library(dplyr)
+psy.p7.t1 <- read.delim("/Volumes/DATA/人因学测量用素材/实验数据/生理测量数据/处理后数据/07-01.txt", header=FALSE) %>%
+  select(c(V1, V2, V3, V4)) %>% rename(mins = V1, PPG = V2, HR = V3, EDA = V4) %>%
+  mutate(Time = mins * 60)
+psy.p7.t1.read <- subset(psy.p7.t1, Time > 20.027 & Time < 402.503) %>%
+  select(c(PPG, HR, EDA)) %>%
+  apply(2, mean)
+
+psy.p7.t2 <- read.delim("/Volumes/DATA/人因学测量用素材/实验数据/生理测量数据/处理后数据/07-02.txt", header=FALSE) %>%
+  select(c(V1, V2, V3, V4)) %>% rename(mins = V1, PPG = V2, HR = V3, EDA = V4) %>%
+  mutate(Time = mins * 60)
+psy.p7.t2.read <- subset(psy.p7.t2, Time > 73.124 & Time < 447.399) %>%
+  select(c(PPG, HR, EDA)) %>%
+  apply(2, mean)
+
+psy.p7.t1.events <- c(paste0("psy.p7.t1.event", 1:7))
+for (i in 1:7) {
+  assign(psy.p7.t1.events[i], subset(psy.p7.t1, Time > get(p7.t1[1]) + get(p7.t1[i + 1]) - leadTime & Time < get(p7.t1[1]) + get(p7.t1[i + 1]) + afterTime) %>% select(c(PPG, HR, EDA)) %>% mutate(PPG = scale(PPG), HR = scale(HR), EDA = scale(EDA)))
+}
+
+psy.p7.t2.events <- c(paste0("psy.p7.t2.event", 1:7))
+for (i in 1:7) {
+  assign(psy.p7.t2.events[i], subset(psy.p7.t2, Time > get(p7.t2[1]) + get(p7.t2[i + 1]) - leadTime & Time < get(p7.t2[1]) + get(p7.t2[i + 1]) + afterTime) %>% select(c(PPG, HR, EDA)) %>% mutate(PPG = scale(PPG), HR = scale(HR), EDA = scale(EDA)))
+}
+
+```
+
+### Participant 8
+
+```{r}
+# data preprocessing
+library(dplyr)
+psy.p8.t1 <- read.delim("/Volumes/DATA/人因学测量用素材/实验数据/生理测量数据/处理后数据/08-01.txt", header=FALSE) %>%
+  select(c(V1, V2, V3, V4)) %>% rename(mins = V1, PPG = V2, HR = V3, EDA = V4) %>%
+  mutate(Time = mins * 60)
+psy.p8.t1.read <- subset(psy.p8.t1, Time > 12.347 & Time < 324.664) %>%
+  select(c(PPG, HR, EDA)) %>%
+  apply(2, mean)
+
+psy.p8.t2 <- read.delim("/Volumes/DATA/人因学测量用素材/实验数据/生理测量数据/处理后数据/08-02.txt", header=FALSE) %>%
+  select(c(V1, V2, V3, V4)) %>% rename(mins = V1, PPG = V2, HR = V3, EDA = V4) %>%
+  mutate(Time = mins * 60)
+psy.p8.t2.read <- subset(psy.p8.t2, Time > 55.863 & Time < 379.332) %>%
+  select(c(PPG, HR, EDA)) %>%
+  apply(2, mean)
+
+psy.p8.t1.events <- c(paste0("psy.p8.t1.event", 1:7))
+for (i in 1:7) {
+  assign(psy.p8.t1.events[i], subset(psy.p8.t1, Time > get(p8.t1[1]) + get(p8.t1[i + 1]) - leadTime & Time < get(p8.t1[1]) + get(p8.t1[i + 1]) + afterTime) %>% select(c(PPG, HR, EDA)) %>% mutate(PPG = scale(PPG), HR = scale(HR), EDA = scale(EDA)))
+}
+
+psy.p8.t2.events <- c(paste0("psy.p8.t2.event", 1:7))
+for (i in 1:7) {
+  assign(psy.p8.t2.events[i], subset(psy.p8.t2, Time > get(p8.t2[1]) + get(p8.t2[i + 1]) - leadTime & Time < get(p8.t2[1]) + get(p8.t2[i + 1]) + afterTime) %>% select(c(PPG, HR, EDA)) %>% mutate(PPG = scale(PPG), HR = scale(HR), EDA = scale(EDA)))
+}
+
+```
+
+### Participant 9
+
+```{r}
+# data preprocessing
+library(dplyr)
+psy.p9.t1 <- read.delim("/Volumes/DATA/人因学测量用素材/实验数据/生理测量数据/处理后数据/09-01.txt", header=FALSE) %>%
+  select(c(V1, V2, V3, V4)) %>% rename(mins = V1, PPG = V2, HR = V3, EDA = V4) %>%
+  mutate(Time = mins * 60)
+psy.p9.t1.read <- subset(psy.p9.t1, Time > 50.222 & Time < 408.144) %>%
+  select(c(PPG, HR, EDA)) %>%
+  apply(2, mean)
+
+psy.p9.t2 <- read.delim("/Volumes/DATA/人因学测量用素材/实验数据/生理测量数据/处理后数据/09-02.txt", header=FALSE) %>%
+  select(c(V1, V2, V3, V4)) %>% rename(mins = V1, PPG = V2, HR = V3, EDA = V4) %>%
+  mutate(Time = mins * 60)
+psy.p9.t2.read <- subset(psy.p9.t2, Time > 10.534 & Time < 393.927) %>%
+  select(c(PPG, HR, EDA)) %>%
+  apply(2, mean)
+psy.p9.t1.events <- c(paste0("psy.p9.t1.event", 1:7))
+for (i in 1:7) {
+  assign(psy.p9.t1.events[i], subset(psy.p9.t1, Time > get(p9.t1[1]) + get(p9.t1[i + 1]) - leadTime & Time < get(p9.t1[1]) + get(p9.t1[i + 1]) + afterTime) %>% select(c(PPG, HR, EDA)) %>% mutate(PPG = scale(PPG), HR = scale(HR), EDA = scale(EDA)))
+}
+
+psy.p9.t2.events <- c(paste0("psy.p9.t2.event", 1:7))
+for (i in 1:7) {
+  assign(psy.p9.t2.events[i], subset(psy.p9.t2, Time > get(p9.t2[1]) + get(p9.t2[i + 1]) - leadTime & Time < get(p9.t2[1]) + get(p9.t2[i + 1]) + afterTime) %>% select(c(PPG, HR, EDA)) %>% mutate(PPG = scale(PPG), HR = scale(HR), EDA = scale(EDA)))
+}
+```
+
+
+
+### Participant 10
+
+```{r}
+# data preprocessing
+library(dplyr)
+psy.p10.t1 <- read.delim("/Volumes/DATA/人因学测量用素材/实验数据/生理测量数据/处理后数据/10-01.txt", header=FALSE) %>%
+  select(c(V1, V2, V3, V4)) %>% rename(mins = V1, PPG = V2, HR = V3, EDA = V4) %>%
+  mutate(Time = mins * 60)
+psy.p10.t1.read <- subset(psy.p10.t1, Time > 7.295 & Time < 105.645) %>%
+  select(c(PPG, HR, EDA)) %>%
+  apply(2, mean)
+
+psy.p10.t2 <- read.delim("/Volumes/DATA/人因学测量用素材/实验数据/生理测量数据/处理后数据/10-02.txt", header=FALSE) %>%
+  select(c(V1, V2, V3, V4)) %>% rename(mins = V1, PPG = V2, HR = V3, EDA = V4) %>%
+  mutate(Time = mins * 60)
+psy.p10.t2.read <- subset(psy.p10.t2, Time > 70.528 & Time < 414.482) %>%
+  select(c(PPG, HR, EDA)) %>%
+  apply(2, mean)
+
+psy.p10.t1.events <- c(paste0("psy.p10.t1.event", 1:7))
+for (i in 1:7) {
+  assign(psy.p10.t1.events[i], subset(psy.p10.t1, Time > get(p10.t1[1]) + get(p10.t1[i + 1]) - leadTime & Time < get(p10.t1[1]) + get(p10.t1[i + 1]) + afterTime) %>% select(c(PPG, HR, EDA)) %>% mutate(PPG = scale(PPG), HR = scale(HR), EDA = scale(EDA)))
+}
+
+psy.p10.t2.events <- c(paste0("psy.p10.t2.event", 1:7))
+for (i in 1:7) {
+  assign(psy.p10.t2.events[i], subset(psy.p10.t2, Time > get(p10.t2[1]) + get(p10.t2[i + 1]) - leadTime & Time < get(p10.t2[1]) + get(p10.t2[i + 1]) + afterTime) %>% select(c(PPG, HR, EDA)) %>% mutate(PPG = scale(PPG), HR = scale(HR), EDA = scale(EDA)))
+}
+```
+
+### Summary 
+
+#### Part 1 EDA
+
+##### Event1
+```{r}
+
+library(reshape)
+library(ggplot2)
+library(plyr)
+psy.t1.event1.EDA <- rbind.fill(data.frame(t(psy.p2.t1.event1$EDA)), data.frame(t(psy.p4.t1.event1$EDA)), data.frame(t(psy.p5.t1.event1$EDA)), data.frame(t(psy.p6.t1.event1$EDA)), data.frame(t(psy.p7.t1.event1$EDA)), data.frame(t(psy.p8.t1.event1$EDA)), data.frame(t(psy.p10.t1.event1$EDA)))
+index <- factor(as.numeric(1:40))
+psy.t1.event1.EDA <- data.frame(t(psy.t1.event1.EDA)) %>% cbind(index)
+psy.t1.event1.EDA.long <- melt(psy.t1.event1.EDA, id = "index") %>% mutate(trial = 1)
+
+psy.t2.event1.EDA <- rbind.fill(data.frame(t(psy.p2.t2.event1$EDA)), data.frame(t(psy.p4.t2.event1$EDA)), data.frame(t(psy.p5.t2.event1$EDA)), data.frame(t(psy.p6.t2.event1$EDA)), data.frame(t(psy.p7.t2.event1$EDA)), data.frame(t(psy.p8.t2.event1$EDA)), data.frame(t(psy.p10.t2.event1$EDA)))
+index <- factor(as.numeric(1:40))
+psy.t2.event1.EDA <- data.frame(t(psy.t2.event1.EDA)) %>% cbind(index)
+psy.t2.event1.EDA.long <- melt(psy.t2.event1.EDA, id = "index") %>% mutate(trial = 2)
+
+psy.event1.EDA <- rbind(psy.t1.event1.EDA.long, psy.t2.event1.EDA.long) 
+psy.event1.EDA$trial <- factor(psy.event1.EDA$trial)
+ggplot(data = psy.event1.EDA, aes(x=index, y=value, colour=trial)) + geom_point() + geom_smooth(method = lm, formula = y~poly(x,2), se=TRUE, size=1) + labs(title = "Event 1 EDA") + theme(plot.title = element_text(hjust  = 0.5))
+
+
+```
+
+##### Event2
+```{r}
+
+library(reshape)
+library(ggplot2)
+library(plyr)
+psy.t1.event2.EDA <- rbind.fill(data.frame(t(psy.p2.t1.event2$EDA)), data.frame(t(psy.p4.t1.event2$EDA)), data.frame(t(psy.p5.t1.event2$EDA)), data.frame(t(psy.p6.t1.event2$EDA)), data.frame(t(psy.p7.t1.event2$EDA)), data.frame(t(psy.p8.t1.event2$EDA)), data.frame(t(psy.p10.t1.event2$EDA)))
+index <- factor(as.numeric(1:40))
+psy.t1.event2.EDA <- data.frame(t(psy.t1.event2.EDA)) %>% cbind(index)
+psy.t1.event2.EDA.long <- melt(psy.t1.event2.EDA, id = "index") %>% mutate(trial = 1)
+
+psy.t2.event2.EDA <- rbind.fill(data.frame(t(psy.p2.t2.event2$EDA)), data.frame(t(psy.p4.t2.event2$EDA)), data.frame(t(psy.p5.t2.event2$EDA)), data.frame(t(psy.p6.t2.event2$EDA)), data.frame(t(psy.p7.t2.event2$EDA)), data.frame(t(psy.p8.t2.event2$EDA)), data.frame(t(psy.p10.t2.event2$EDA)))
+index <- factor(as.numeric(1:40))
+psy.t2.event2.EDA <- data.frame(t(psy.t2.event2.EDA)) %>% cbind(index)
+psy.t2.event2.EDA.long <- melt(psy.t2.event2.EDA, id = "index") %>% mutate(trial = 2)
+
+psy.event2.EDA <- rbind(psy.t1.event2.EDA.long, psy.t2.event2.EDA.long) 
+psy.event2.EDA$trial <- factor(psy.event2.EDA$trial)
+ggplot(data = psy.event2.EDA, aes(x=index, y=value, colour=trial)) + geom_point() + geom_smooth(method = lm, formula = y~poly(x,2), se=TRUE, size=1) + labs(title = "Event2 EDA") + theme(plot.title = element_text(hjust  = 0.5))
+
+
+```
+
+##### Event3
+```{r}
+
+library(reshape)
+library(ggplot2)
+library(plyr)
+psy.t1.event3.EDA <- rbind.fill(data.frame(t(psy.p2.t1.event3$EDA)), data.frame(t(psy.p4.t1.event3$EDA)), data.frame(t(psy.p5.t1.event3$EDA)), data.frame(t(psy.p6.t1.event3$EDA)), data.frame(t(psy.p7.t1.event3$EDA)), data.frame(t(psy.p8.t1.event3$EDA)), data.frame(t(psy.p10.t1.event3$EDA)))
+index <- factor(as.numeric(1:40))
+psy.t1.event3.EDA <- data.frame(t(psy.t1.event3.EDA)) %>% cbind(index)
+psy.t1.event3.EDA.long <- melt(psy.t1.event3.EDA, id = "index") %>% mutate(trial = 1)
+
+psy.t2.event3.EDA <- rbind.fill(data.frame(t(psy.p2.t2.event3$EDA)), data.frame(t(psy.p4.t2.event3$EDA)), data.frame(t(psy.p5.t2.event3$EDA)), data.frame(t(psy.p6.t2.event3$EDA)), data.frame(t(psy.p7.t2.event3$EDA)), data.frame(t(psy.p8.t2.event3$EDA)), data.frame(t(psy.p10.t2.event3$EDA)))
+index <- factor(as.numeric(1:40))
+psy.t2.event3.EDA <- data.frame(t(psy.t2.event3.EDA)[1:40,]) %>% cbind(index)
+psy.t2.event3.EDA.long <- melt(psy.t2.event3.EDA, id = "index") %>% mutate(trial = 2)
+
+psy.event3.EDA <- rbind(psy.t1.event3.EDA.long, psy.t2.event3.EDA.long) 
+psy.event3.EDA$trial <- factor(psy.event3.EDA$trial)
+ggplot(data = psy.event3.EDA, aes(x=index, y=value, colour=trial)) + geom_point() + geom_smooth(method = lm, formula = y~poly(x,2), se=TRUE, size=1) + labs(title = "Event 3 EDA") + theme(plot.title = element_text(hjust  = 0.5))
+
+
+```
+
+
+##### Event4
+```{r}
+
+library(reshape)
+library(ggplot2)
+library(plyr)
+psy.t1.event4.EDA <- rbind.fill(data.frame(t(psy.p2.t1.event4$EDA)), data.frame(t(psy.p4.t1.event4$EDA)), data.frame(t(psy.p5.t1.event4$EDA)), data.frame(t(psy.p6.t1.event4$EDA)), data.frame(t(psy.p7.t1.event4$EDA)), data.frame(t(psy.p8.t1.event4$EDA)), data.frame(t(psy.p10.t1.event4$EDA)))
+index <- factor(as.numeric(1:40))
+psy.t1.event4.EDA <- data.frame(t(psy.t1.event4.EDA)) %>% cbind(index)
+psy.t1.event4.EDA.long <- melt(psy.t1.event4.EDA, id = "index") %>% mutate(trial = 1)
+
+psy.t2.event4.EDA <- rbind.fill(data.frame(t(psy.p2.t2.event4$EDA)), data.frame(t(psy.p4.t2.event4$EDA)), data.frame(t(psy.p5.t2.event4$EDA)), data.frame(t(psy.p6.t2.event4$EDA)), data.frame(t(psy.p7.t2.event4$EDA)), data.frame(t(psy.p8.t2.event4$EDA)), data.frame(t(psy.p10.t2.event4$EDA)))
+index <- factor(as.numeric(1:40))
+psy.t2.event4.EDA <- data.frame(t(psy.t2.event4.EDA)[1:40,]) %>% cbind(index)
+psy.t2.event4.EDA.long <- melt(psy.t2.event4.EDA, id = "index") %>% mutate(trial = 2)
+
+psy.event4.EDA <- rbind(psy.t1.event4.EDA.long, psy.t2.event4.EDA.long) 
+psy.event4.EDA$trial <- factor(psy.event4.EDA$trial)
+ggplot(data = psy.event4.EDA, aes(x=index, y=value, colour=trial)) + geom_point() + geom_smooth(method = lm, formula = y~poly(x,2), se=TRUE, size=1) + labs(title = "Event 4 EDA") + theme(plot.title = element_text(hjust  = 0.5))
+
+
+```
+
+
+##### Event5
+```{r}
+library(dplyr)
+library(reshape)
+library(ggplot2)
+library(plyr)
+psy.t1.event5.EDA <- rbind.fill(data.frame(t(psy.p2.t1.event5$EDA)), data.frame(t(psy.p4.t1.event5$EDA)), data.frame(t(psy.p5.t1.event5$EDA)), data.frame(t(psy.p6.t1.event5$EDA)), data.frame(t(psy.p7.t1.event5$EDA)), data.frame(t(psy.p8.t1.event5$EDA)), data.frame(t(psy.p10.t1.event5$EDA)))
+index <- factor(as.numeric(1:40))
+psy.t1.event5.EDA <- data.frame(t(psy.t1.event5.EDA)) %>% cbind(index)
+psy.t1.event5.EDA.long <- melt(psy.t1.event5.EDA, id = "index") %>% mutate(trial = 1)
+
+psy.t2.event5.EDA <- rbind.fill(data.frame(t(psy.p2.t2.event5$EDA)), data.frame(t(psy.p4.t2.event5$EDA)), data.frame(t(psy.p5.t2.event5$EDA)), data.frame(t(psy.p6.t2.event5$EDA)), data.frame(t(psy.p7.t2.event5$EDA)), data.frame(t(psy.p8.t2.event5$EDA)), data.frame(t(psy.p10.t2.event5$EDA)))
+index <- factor(as.numeric(1:40))
+psy.t2.event5.EDA <- data.frame(t(psy.t2.event5.EDA)[1:40,]) %>% cbind(index)
+psy.t2.event5.EDA.long <- melt(psy.t2.event5.EDA, id = "index") %>% mutate(trial = 2)
+
+psy.event5.EDA <- rbind(psy.t1.event5.EDA.long, psy.t2.event5.EDA.long) 
+psy.event5.EDA$trial <- factor(psy.event5.EDA$trial)
+ggplot(data = psy.event5.EDA, aes(x=index, y=value, colour=trial)) + geom_point() + geom_smooth(method = lm, formula = y~poly(x,2), se=TRUE, size=1) + labs(title = "Event 3 EDA") + theme(plot.title = element_text(hjust  = 0.5))
+
+```
+
+
+##### Event6
+```{r}
+
+library(reshape)
+library(ggplot2)
+library(plyr)
+psy.t1.event6.EDA <- rbind.fill(data.frame(t(psy.p2.t1.event6$EDA)), data.frame(t(psy.p4.t1.event6$EDA)), data.frame(t(psy.p5.t1.event6$EDA)), data.frame(t(psy.p6.t1.event6$EDA)), data.frame(t(psy.p7.t1.event6$EDA)), data.frame(t(psy.p8.t1.event6$EDA)), data.frame(t(psy.p10.t1.event6$EDA)))
+index <- factor(as.numeric(1:40))
+psy.t1.event6.EDA <- data.frame(t(psy.t1.event6.EDA)) %>% cbind(index)
+psy.t1.event6.EDA.long <- melt(psy.t1.event6.EDA, id = "index") %>% mutate(trial = 1)
+
+psy.t2.event6.EDA <- rbind.fill(data.frame(t(psy.p2.t2.event6$EDA)), data.frame(t(psy.p4.t2.event6$EDA)), data.frame(t(psy.p5.t2.event6$EDA)), data.frame(t(psy.p6.t2.event6$EDA)), data.frame(t(psy.p7.t2.event6$EDA)), data.frame(t(psy.p8.t2.event6$EDA)), data.frame(t(psy.p10.t2.event6$EDA)))
+index <- factor(as.numeric(1:40))
+psy.t2.event6.EDA <- data.frame(t(psy.t2.event6.EDA)[1:40,]) %>% cbind(index)
+psy.t2.event6.EDA.long <- melt(psy.t2.event6.EDA, id = "index") %>% mutate(trial = 2)
+
+psy.event6.EDA <- rbind(psy.t1.event6.EDA.long, psy.t2.event6.EDA.long) 
+psy.event6.EDA$trial <- factor(psy.event6.EDA$trial)
+ggplot(data = psy.event6.EDA, aes(x=index, y=value, colour=trial)) + geom_point() + geom_smooth(method = lm, formula = y~poly(x,2), se=TRUE, size=1) + labs(title = "Event 6 EDA") + theme(plot.title = element_text(hjust  = 0.5))
+
+
+```
+
+##### Event7
+```{r}
+
+library(reshape)
+library(ggplot2)
+library(plyr)
+psy.t1.event7.EDA <- rbind.fill(data.frame(t(psy.p2.t1.event7$EDA)), data.frame(t(psy.p4.t1.event7$EDA)), data.frame(t(psy.p5.t1.event7$EDA)), data.frame(t(psy.p6.t1.event7$EDA)), data.frame(t(psy.p7.t1.event7$EDA)), data.frame(t(psy.p8.t1.event7$EDA)), data.frame(t(psy.p10.t1.event7$EDA)))
+index <- factor(as.numeric(1:40))
+psy.t1.event7.EDA <- data.frame(t(psy.t1.event7.EDA)) %>% cbind(index)
+psy.t1.event7.EDA.long <- melt(psy.t1.event7.EDA, id = "index") %>% mutate(trial = 1)
+
+psy.t2.event7.EDA <- rbind.fill(data.frame(t(psy.p2.t2.event7$EDA)), data.frame(t(psy.p4.t2.event7$EDA)), data.frame(t(psy.p5.t2.event7$EDA)), data.frame(t(psy.p6.t2.event7$EDA)), data.frame(t(psy.p7.t2.event7$EDA)), data.frame(t(psy.p8.t2.event7$EDA)), data.frame(t(psy.p10.t2.event7$EDA)))
+index <- factor(as.numeric(1:40))
+psy.t2.event7.EDA <- data.frame(t(psy.t2.event7.EDA)[1:40,]) %>% cbind(index)
+psy.t2.event7.EDA.long <- melt(psy.t2.event7.EDA, id = "index") %>% mutate(trial = 2)
+
+psy.event7.EDA <- rbind(psy.t1.event7.EDA.long, psy.t2.event7.EDA.long) 
+psy.event7.EDA$trial <- factor(psy.event7.EDA$trial)
+ggplot(data = psy.event7.EDA, aes(x=index, y=value, colour=trial)) + geom_point() + geom_smooth(method = lm, formula = y~poly(x,2), se=TRUE, size=1) + labs(title = "Event 7 EDA") + theme(plot.title = element_text(hjust  = 0.5))
+
+
+```
+#### Part 2 HR
+
+##### Event1
+```{r}
+
+library(reshape)
+library(ggplot2)
+library(plyr)
+psy.t1.event1.HR <- rbind.fill(data.frame(t(psy.p2.t1.event1$HR)), data.frame(t(psy.p4.t1.event1$HR)), data.frame(t(psy.p5.t1.event1$HR)), data.frame(t(psy.p6.t1.event1$HR)), data.frame(t(psy.p7.t1.event1$HR)), data.frame(t(psy.p8.t1.event1$HR)), data.frame(t(psy.p10.t1.event1$HR)))
+index <- factor(as.numeric(1:40))
+psy.t1.event1.HR <- data.frame(t(psy.t1.event1.HR)) %>% cbind(index)
+psy.t1.event1.HR.long <- melt(psy.t1.event1.HR, id = "index") %>% mutate(trial = 1)
+
+psy.t2.event1.HR <- rbind.fill(data.frame(t(psy.p2.t2.event1$HR)), data.frame(t(psy.p4.t2.event1$HR)), data.frame(t(psy.p5.t2.event1$HR)), data.frame(t(psy.p6.t2.event1$HR)), data.frame(t(psy.p7.t2.event1$HR)), data.frame(t(psy.p8.t2.event1$HR)), data.frame(t(psy.p10.t2.event1$HR)))
+index <- factor(as.numeric(1:40))
+psy.t2.event1.HR <- data.frame(t(psy.t2.event1.HR)) %>% cbind(index)
+psy.t2.event1.HR.long <- melt(psy.t2.event1.HR, id = "index") %>% mutate(trial = 2)
+
+psy.event1.HR <- rbind(psy.t1.event1.HR.long, psy.t2.event1.HR.long) 
+psy.event1.HR$trial <- factor(psy.event1.HR$trial)
+ggplot(data = psy.event1.HR, aes(x=index, y=value, colour=trial)) + geom_point() + geom_smooth(method = lm, formula = y~poly(x,2), se=TRUE, size=1) + labs(title = "Event 1 HR") + theme(plot.title = element_text(hjust  = 0.5))
+
+
+```
+
+##### Event2
+```{r}
+
+library(reshape)
+library(ggplot2)
+library(plyr)
+psy.t1.event2.HR <- rbind.fill(data.frame(t(psy.p2.t1.event2$HR)), data.frame(t(psy.p4.t1.event2$HR)), data.frame(t(psy.p5.t1.event2$HR)), data.frame(t(psy.p6.t1.event2$HR)), data.frame(t(psy.p7.t1.event2$HR)), data.frame(t(psy.p8.t1.event2$HR)), data.frame(t(psy.p10.t1.event2$HR)))
+index <- factor(as.numeric(1:40))
+psy.t1.event2.HR <- data.frame(t(psy.t1.event2.HR)) %>% cbind(index)
+psy.t1.event2.HR.long <- melt(psy.t1.event2.HR, id = "index") %>% mutate(trial = 1)
+
+psy.t2.event2.HR <- rbind.fill(data.frame(t(psy.p2.t2.event2$HR)), data.frame(t(psy.p4.t2.event2$HR)), data.frame(t(psy.p5.t2.event2$HR)), data.frame(t(psy.p6.t2.event2$HR)), data.frame(t(psy.p7.t2.event2$HR)), data.frame(t(psy.p8.t2.event2$HR)), data.frame(t(psy.p10.t2.event2$HR)))
+index <- factor(as.numeric(1:40))
+psy.t2.event2.HR <- data.frame(t(psy.t2.event2.HR)) %>% cbind(index)
+psy.t2.event2.HR.long <- melt(psy.t2.event2.HR, id = "index") %>% mutate(trial = 2)
+
+psy.event2.HR <- rbind(psy.t1.event2.HR.long, psy.t2.event2.HR.long) 
+psy.event2.HR$trial <- factor(psy.event2.HR$trial)
+ggplot(data = psy.event2.HR, aes(x=index, y=value, colour=trial)) + geom_point() + geom_smooth(method = lm, formula = y~poly(x,2), se=TRUE, size=1) + labs(title = "Event2 HR") + theme(plot.title = element_text(hjust  = 0.5))
+
+
+```
+
+##### Event3
+```{r}
+
+library(reshape)
+library(ggplot2)
+library(plyr)
+psy.t1.event3.HR <- rbind.fill(data.frame(t(psy.p2.t1.event3$HR)), data.frame(t(psy.p4.t1.event3$HR)), data.frame(t(psy.p5.t1.event3$HR)), data.frame(t(psy.p6.t1.event3$HR)), data.frame(t(psy.p7.t1.event3$HR)), data.frame(t(psy.p8.t1.event3$HR)), data.frame(t(psy.p10.t1.event3$HR)))
+index <- factor(as.numeric(1:40))
+psy.t1.event3.HR <- data.frame(t(psy.t1.event3.HR)) %>% cbind(index)
+psy.t1.event3.HR.long <- melt(psy.t1.event3.HR, id = "index") %>% mutate(trial = 1)
+
+psy.t2.event3.HR <- rbind.fill(data.frame(t(psy.p2.t2.event3$HR)), data.frame(t(psy.p4.t2.event3$HR)), data.frame(t(psy.p5.t2.event3$HR)), data.frame(t(psy.p6.t2.event3$HR)), data.frame(t(psy.p7.t2.event3$HR)), data.frame(t(psy.p8.t2.event3$HR)), data.frame(t(psy.p10.t2.event3$HR)))
+index <- factor(as.numeric(1:40))
+psy.t2.event3.HR <- data.frame(t(psy.t2.event3.HR)[1:40,]) %>% cbind(index)
+psy.t2.event3.HR.long <- melt(psy.t2.event3.HR, id = "index") %>% mutate(trial = 2)
+
+psy.event3.HR <- rbind(psy.t1.event3.HR.long, psy.t2.event3.HR.long) 
+psy.event3.HR$trial <- factor(psy.event3.HR$trial)
+ggplot(data = psy.event3.HR, aes(x=index, y=value, colour=trial)) + geom_point() + geom_smooth(method = lm, formula = y~poly(x,2), se=TRUE, size=1) + labs(title = "Event 3 HR") + theme(plot.title = element_text(hjust  = 0.5))
+
+
+```
+
+
+##### Event4
+```{r}
+
+library(reshape)
+library(ggplot2)
+library(plyr)
+psy.t1.event4.HR <- rbind.fill(data.frame(t(psy.p2.t1.event4$HR)), data.frame(t(psy.p4.t1.event4$HR)), data.frame(t(psy.p5.t1.event4$HR)), data.frame(t(psy.p6.t1.event4$HR)), data.frame(t(psy.p7.t1.event4$HR)), data.frame(t(psy.p8.t1.event4$HR)), data.frame(t(psy.p10.t1.event4$HR)))
+index <- factor(as.numeric(1:40))
+psy.t1.event4.HR <- data.frame(t(psy.t1.event4.HR)) %>% cbind(index)
+psy.t1.event4.HR.long <- melt(psy.t1.event4.HR, id = "index") %>% mutate(trial = 1)
+
+psy.t2.event4.HR <- rbind.fill(data.frame(t(psy.p2.t2.event4$HR)), data.frame(t(psy.p4.t2.event4$HR)), data.frame(t(psy.p5.t2.event4$HR)), data.frame(t(psy.p6.t2.event4$HR)), data.frame(t(psy.p7.t2.event4$HR)), data.frame(t(psy.p8.t2.event4$HR)), data.frame(t(psy.p10.t2.event4$HR)))
+index <- factor(as.numeric(1:40))
+psy.t2.event4.HR <- data.frame(t(psy.t2.event4.HR)[1:40,]) %>% cbind(index)
+psy.t2.event4.HR.long <- melt(psy.t2.event4.HR, id = "index") %>% mutate(trial = 2)
+
+psy.event4.HR <- rbind(psy.t1.event4.HR.long, psy.t2.event4.HR.long) 
+psy.event4.HR$trial <- factor(psy.event4.HR$trial)
+ggplot(data = psy.event4.HR, aes(x=index, y=value, colour=trial)) + geom_point() + geom_smooth(method = lm, formula = y~poly(x,2), se=TRUE, size=1) + labs(title = "Event 4 HR") + theme(plot.title = element_text(hjust  = 0.5))
+
+
+```
+
+
+##### Event5
+```{r}
+
+library(reshape)
+library(ggplot2)
+library(plyr)
+psy.t1.event5.HR <- rbind.fill(data.frame(t(psy.p2.t1.event5$HR)), data.frame(t(psy.p4.t1.event5$HR)), data.frame(t(psy.p5.t1.event5$HR)), data.frame(t(psy.p6.t1.event5$HR)), data.frame(t(psy.p7.t1.event5$HR)), data.frame(t(psy.p8.t1.event5$HR)), data.frame(t(psy.p10.t1.event5$HR)))
+index <- factor(as.numeric(1:40))
+psy.t1.event5.HR <- data.frame(t(psy.t1.event5.HR)) %>% cbind(index)
+psy.t1.event5.HR.long <- melt(psy.t1.event5.HR, id = "index") %>% mutate(trial = 1)
+
+psy.t2.event5.HR <- rbind.fill(data.frame(t(psy.p2.t2.event5$HR)), data.frame(t(psy.p4.t2.event5$HR)), data.frame(t(psy.p5.t2.event5$HR)), data.frame(t(psy.p6.t2.event5$HR)), data.frame(t(psy.p7.t2.event5$HR)), data.frame(t(psy.p8.t2.event5$HR)), data.frame(t(psy.p10.t2.event5$HR)))
+index <- factor(as.numeric(1:40))
+psy.t2.event5.HR <- data.frame(t(psy.t2.event5.HR)[1:40,]) %>% cbind(index)
+psy.t2.event5.HR.long <- melt(psy.t2.event5.HR, id = "index") %>% mutate(trial = 2)
+
+psy.event5.HR <- rbind(psy.t1.event5.HR.long, psy.t2.event5.HR.long) 
+psy.event5.HR$trial <- factor(psy.event5.HR$trial)
+ggplot(data = psy.event5.HR, aes(x=index, y=value, colour=trial)) + geom_point() + geom_smooth(method = lm, formula = y~poly(x,2), se=TRUE, size=1) + labs(title = "Event 3 HR") + theme(plot.title = element_text(hjust  = 0.5))
+
+
+```
+
+
+##### Event6
+```{r}
+
+library(reshape)
+library(ggplot2)
+library(plyr)
+psy.t1.event6.HR <- rbind.fill(data.frame(t(psy.p2.t1.event6$HR)), data.frame(t(psy.p4.t1.event6$HR)), data.frame(t(psy.p5.t1.event6$HR)), data.frame(t(psy.p6.t1.event6$HR)), data.frame(t(psy.p7.t1.event6$HR)), data.frame(t(psy.p8.t1.event6$HR)), data.frame(t(psy.p10.t1.event6$HR)))
+index <- factor(as.numeric(1:40))
+psy.t1.event6.HR <- data.frame(t(psy.t1.event6.HR)) %>% cbind(index)
+psy.t1.event6.HR.long <- melt(psy.t1.event6.HR, id = "index") %>% mutate(trial = 1)
+
+psy.t2.event6.HR <- rbind.fill(data.frame(t(psy.p2.t2.event6$HR)), data.frame(t(psy.p4.t2.event6$HR)), data.frame(t(psy.p5.t2.event6$HR)), data.frame(t(psy.p6.t2.event6$HR)), data.frame(t(psy.p7.t2.event6$HR)), data.frame(t(psy.p8.t2.event6$HR)), data.frame(t(psy.p10.t2.event6$HR)))
+index <- factor(as.numeric(1:40))
+psy.t2.event6.HR <- data.frame(t(psy.t2.event6.HR)[1:40,]) %>% cbind(index)
+psy.t2.event6.HR.long <- melt(psy.t2.event6.HR, id = "index") %>% mutate(trial = 2)
+
+psy.event6.HR <- rbind(psy.t1.event6.HR.long, psy.t2.event6.HR.long) 
+psy.event6.HR$trial <- factor(psy.event6.HR$trial)
+ggplot(data = psy.event6.HR, aes(x=index, y=value, colour=trial)) + geom_point() + geom_smooth(method = lm, formula = y~poly(x,2), se=TRUE, size=1) + labs(title = "Event 6 HR") + theme(plot.title = element_text(hjust  = 0.5))
+
+
+```
+
+##### Event7
+```{r}
+
+library(reshape)
+library(ggplot2)
+library(plyr)
+psy.t1.event7.HR <- rbind.fill(data.frame(t(psy.p2.t1.event7$HR)), data.frame(t(psy.p4.t1.event7$HR)), data.frame(t(psy.p5.t1.event7$HR)), data.frame(t(psy.p6.t1.event7$HR)), data.frame(t(psy.p7.t1.event7$HR)), data.frame(t(psy.p8.t1.event7$HR)), data.frame(t(psy.p10.t1.event7$HR)))
+index <- factor(as.numeric(1:40))
+psy.t1.event7.HR <- data.frame(t(psy.t1.event7.HR)) %>% cbind(index)
+psy.t1.event7.HR.long <- melt(psy.t1.event7.HR, id = "index") %>% mutate(trial = 1)
+
+psy.t2.event7.HR <- rbind.fill(data.frame(t(psy.p2.t2.event7$HR)), data.frame(t(psy.p4.t2.event7$HR)), data.frame(t(psy.p5.t2.event7$HR)), data.frame(t(psy.p6.t2.event7$HR)), data.frame(t(psy.p7.t2.event7$HR)), data.frame(t(psy.p8.t2.event7$HR)), data.frame(t(psy.p10.t2.event7$HR)))
+index <- factor(as.numeric(1:40))
+psy.t2.event7.HR <- data.frame(t(psy.t2.event7.HR)[1:40,]) %>% cbind(index)
+psy.t2.event7.HR.long <- melt(psy.t2.event7.HR, id = "index") %>% mutate(trial = 2)
+
+psy.event7.HR <- rbind(psy.t1.event7.HR.long, psy.t2.event7.HR.long) 
+psy.event7.HR$trial <- factor(psy.event7.HR$trial)
+ggplot(data = psy.event7.HR, aes(x=index, y=value, colour=trial)) + geom_point() + geom_smooth(method = lm, formula = y~poly(x,2), se=TRUE, size=1) + labs(title = "Event 7 HR") + theme(plot.title = element_text(hjust  = 0.5))
+
+
+```
+
+
+#### Part 2
+```{r}
+psy.p1.t1.event <- list(psy.p1.t1.event1, psy.p1.t1.event2, psy.p1.t1.event3, psy.p1.t1.event4, psy.p1.t1.event5, psy.p1.t1.event6, psy.p1.t1.event7)
+psy.p1.t2.event <- list(psy.p1.t2.event1, psy.p1.t2.event2, psy.p1.t2.event3, psy.p1.t2.event4, psy.p1.t2.event5, psy.p1.t2.event6, psy.p1.t2.event7)
+psy.p1.event <- list(psy.p1.t1.event, psy.p1.t2.event)
+
+psy.p2.t1.event <- list(psy.p2.t1.event1, psy.p2.t1.event2, psy.p2.t1.event3, psy.p2.t1.event4, psy.p2.t1.event5, psy.p2.t1.event6, psy.p2.t1.event7)
+psy.p2.t2.event <- list(psy.p2.t2.event1, psy.p2.t2.event2, psy.p2.t2.event3, psy.p2.t2.event4, psy.p2.t2.event5, psy.p2.t2.event6, psy.p2.t2.event7)
+psy.p2.event <- list(psy.p2.t1.event, psy.p2.t2.event)
+
+psy.p3.t1.event <- list(psy.p3.t1.event1, psy.p3.t1.event2, psy.p3.t1.event3, psy.p3.t1.event4, psy.p3.t1.event5, psy.p3.t1.event6, psy.p3.t1.event7)
+psy.p3.t2.event <- list(psy.p3.t2.event1, psy.p3.t2.event2, psy.p3.t2.event3, psy.p3.t2.event4, psy.p3.t2.event5, psy.p3.t2.event6, psy.p3.t2.event7)
+psy.p3.event <- list(psy.p3.t1.event, psy.p3.t2.event)
+
+psy.p4.t1.event <- list(psy.p4.t1.event1, psy.p4.t1.event2, psy.p4.t1.event3, psy.p4.t1.event4, psy.p4.t1.event5, psy.p4.t1.event6, psy.p4.t1.event7)
+psy.p4.t2.event <- list(psy.p4.t2.event1, psy.p4.t2.event2, psy.p4.t2.event3, psy.p4.t2.event4, psy.p4.t2.event5, psy.p4.t2.event6, psy.p4.t2.event7)
+psy.p4.event <- list(psy.p4.t1.event, psy.p4.t2.event)
+
+psy.p5.t1.event <- list(psy.p5.t1.event1, psy.p5.t1.event2, psy.p5.t1.event3, psy.p5.t1.event4, psy.p5.t1.event5, psy.p5.t1.event6, psy.p5.t1.event7)
+psy.p5.t2.event <- list(psy.p5.t2.event1, psy.p5.t2.event2, psy.p5.t2.event3, psy.p5.t2.event4, psy.p5.t2.event5, psy.p5.t2.event6, psy.p5.t2.event7)
+psy.p5.event <- list(psy.p5.t1.event, psy.p5.t2.event)
+
+psy.p6.t1.event <- list(psy.p6.t1.event1, psy.p6.t1.event2, psy.p6.t1.event3, psy.p6.t1.event4, psy.p6.t1.event5, psy.p6.t1.event6, psy.p6.t1.event7)
+psy.p6.t2.event <- list(psy.p6.t2.event1, psy.p6.t2.event2, psy.p6.t2.event3, psy.p6.t2.event4, psy.p6.t2.event5, psy.p6.t2.event6, psy.p6.t2.event7)
+psy.p6.event <- list(psy.p6.t1.event, psy.p6.t2.event)
+
+psy.p7.t1.event <- list(psy.p7.t1.event1, psy.p7.t1.event2, psy.p7.t1.event3, psy.p7.t1.event4, psy.p7.t1.event5, psy.p7.t1.event6, psy.p7.t1.event7)
+psy.p7.t2.event <- list(psy.p7.t2.event1, psy.p7.t2.event2, psy.p7.t2.event3, psy.p7.t2.event4, psy.p7.t2.event5, psy.p7.t2.event6, psy.p7.t2.event7)
+psy.p7.event <- list(psy.p7.t1.event, psy.p7.t2.event)
+
+psy.p8.t1.event <- list(psy.p8.t1.event1, psy.p8.t1.event2, psy.p8.t1.event3, psy.p8.t1.event4, psy.p8.t1.event5, psy.p8.t1.event6, psy.p8.t1.event7)
+psy.p8.t2.event <- list(psy.p8.t2.event1, psy.p8.t2.event2, psy.p8.t2.event3, psy.p8.t2.event4, psy.p8.t2.event5, psy.p8.t2.event6, psy.p8.t2.event7)
+psy.p8.event <- list(psy.p8.t1.event, psy.p8.t2.event)
+
+psy.p9.t1.event <- list(psy.p9.t1.event1, psy.p9.t1.event2, psy.p9.t1.event3, psy.p9.t1.event4, psy.p9.t1.event5, psy.p9.t1.event6, psy.p9.t1.event7)
+psy.p9.t2.event <- list(psy.p9.t2.event1, psy.p9.t2.event2, psy.p9.t2.event3, psy.p9.t2.event4, psy.p9.t2.event5, psy.p9.t2.event6, psy.p9.t2.event7)
+psy.p9.event <- list(psy.p9.t1.event, psy.p9.t2.event)
+
+psy.p10.t1.event <- list(psy.p10.t1.event1, psy.p10.t1.event2, psy.p10.t1.event3, psy.p10.t1.event4, psy.p10.t1.event5, psy.p10.t1.event6, psy.p10.t1.event7)
+psy.p10.t2.event <- list(psy.p10.t2.event1, psy.p10.t2.event2, psy.p10.t2.event3, psy.p10.t2.event4, psy.p10.t2.event5, psy.p10.t2.event6, psy.p10.t2.event7)
+psy.p10.event <- list(psy.p10.t1.event, psy.p10.t2.event)
+
+meanOfEvent1 <- function(x) {
+  result <- select(x, c(PPG, HR, EDA)) %>% apply(2, mean)
+  return(result)
+}
+meanOfEvent2 <- function(x) {
+  result <- sapply(x, meanOfEvent1)
+  result <- data.frame(result)
+}
+psy.p1.event <- sapply(psy.p1.event, meanOfEvent2)
+psy.p2.event <- sapply(psy.p2.event, meanOfEvent2)
+psy.p3.event <- sapply(psy.p3.event, meanOfEvent2)
+psy.p4.event <- sapply(psy.p4.event, meanOfEvent2)
+psy.p5.event <- sapply(psy.p5.event, meanOfEvent2)
+psy.p6.event <- sapply(psy.p6.event, meanOfEvent2)
+psy.p7.event <- sapply(psy.p7.event, meanOfEvent2)
+psy.p8.event <- sapply(psy.p8.event, meanOfEvent2)
+psy.p9.event <- sapply(psy.p9.event, meanOfEvent2)
+psy.p10.event <- sapply(psy.p10.event, meanOfEvent2)
+
+part5.t1.event <- sapply(psy.p5.t1.event, meanOfEvent1)
+part5.t2.event <- sapply(psy.p5.t2.event, meanOfEvent1)
+```
+
+## The driving data
+
+In this part, we only be interested in the following parameters:
+
+* The acc in longitudinal direction
+* The acc in latitudinal direction
+* The speed
+* The position (X/Y)
+* brake ratio
+* throttle ratio
+* steering ratio
+* steering velocity
+* The offset from lane center
+
+
+
+### Participant 1
+
+```{r}
+# import data
+library(dplyr)
+driving.p1.t2 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/驾驶模拟器数据/01-02.csv", header=TRUE) 
+driving.p1.t2 <- subset(driving.p1.t2, select=c(Time, position.X, position.Z, speedInMetresPerSecond, localAccelInMetresPerSecond2.Y, localAccelInMetresPerSecond2.Z, steering, steeringVelocity, throttle, brake, offsetFromLaneCenter)) %>%
+  mutate(RealTime = Time - driving.p1.t2[1,1])
+# real time是指将开始驾驶作为零点的计时方式
+driving.p1.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/驾驶模拟器数据/01-01.csv", header=TRUE) %>%
+   subset(select=c(Time, X, Y, Speed, Acceleration, Steering, Brake))
+
+# output the data
+write.csv(driving.p1.t2, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p1.t2.csv")
+write.csv(driving.p1.t1, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p1.t1.csv")
+```
+
+```{r}
+# Match the two Trial
+#此处的数字时间是指遇到压力事件的时间瞬间，通过该时间寻找到压力事件发生的位置
+p1.t2.event1 <- subset(driving.p1.t2, RealTime < 95.1 & RealTime > 95.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p1.t2.event2 <- subset(driving.p1.t2, RealTime < 231.1 & RealTime > 231.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p1.t2.event3 <- subset(driving.p1.t2, RealTime < 278.1 & RealTime > 278.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p1.t2.event4 <- subset(driving.p1.t2, RealTime < 444.1 & RealTime > 444.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p1.t2.event5 <- subset(driving.p1.t2, RealTime < 564.1 & RealTime > 564.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p1.t2.event6 <- subset(driving.p1.t2, RealTime < 656.1 & RealTime > 656.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p1.t2.event7 <- subset(driving.p1.t2, RealTime < 753.1 & RealTime > 753.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+
+# 使用在trial2中得到的坐标，去寻找在trial1中距离最近的位置，作为对照点
+driving.p1.t1 <- mutate(driving.p1.t1, To1 = sqrt((driving.p1.t1$X-p1.t2.event1[[1]])^2 + (driving.p1.t1$Y-p1.t2.event1[[2]])^2))
+driving.p1.t1 <- mutate(driving.p1.t1, To2 = sqrt((driving.p1.t1$X-p1.t2.event2[[1]])^2 + (driving.p1.t1$Y-p1.t2.event2[[2]])^2))
+driving.p1.t1 <- mutate(driving.p1.t1, To3 = sqrt((driving.p1.t1$X-p1.t2.event3[[1]])^2 + (driving.p1.t1$Y-p1.t2.event3[[2]])^2))
+driving.p1.t1 <- mutate(driving.p1.t1, To5 = sqrt((driving.p1.t1$X-p1.t2.event4[[1]])^2 + (driving.p1.t1$Y-p1.t2.event4[[2]])^2))
+driving.p1.t1 <- mutate(driving.p1.t1, To6 = sqrt((driving.p1.t1$X-p1.t2.event5[[1]])^2 + (driving.p1.t1$Y-p1.t2.event5[[2]])^2))
+driving.p1.t1 <- mutate(driving.p1.t1, To7 = sqrt((driving.p1.t1$X-p1.t2.event6[[1]])^2 + (driving.p1.t1$Y-p1.t2.event6[[2]])^2))
+driving.p1.t1 <- mutate(driving.p1.t1, To8 = sqrt((driving.p1.t1$X-p1.t2.event7[[1]])^2 + (driving.p1.t1$Y-p1.t2.event7[[2]])^2))
+write.csv(driving.p1.t1, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p1.t1.csv")
+
+```
+
+```{r}
+# Store the driving response in the event-related period
+driving.p1.event1 <- subset(driving.p1.t2, RealTime < 95 + afterTime & RealTime > 95 - leadTime) %>% mutate(event = 1)
+driving.p1.event2 <- subset(driving.p1.t2, RealTime < 231 + afterTime & RealTime > 231.0 - leadTime) %>% mutate(event = 2)
+driving.p1.event3 <- subset(driving.p1.t2, RealTime < 278 + afterTime & RealTime > 278.0 - leadTime) %>% mutate(event = 3)
+driving.p1.event4 <- subset(driving.p1.t2, RealTime < 444 + afterTime & RealTime > 444.0 - leadTime) %>% mutate(event = 5)
+driving.p1.event5 <- subset(driving.p1.t2, RealTime < 564 + afterTime & RealTime > 564.0 - leadTime) %>% mutate(event = 6)
+driving.p1.event6 <- subset(driving.p1.t2, RealTime < 656 + afterTime & RealTime > 656.0 - leadTime) %>% mutate(event = 7)
+driving.p1.event7 <- subset(driving.p1.t2, RealTime < 753 + afterTime & RealTime > 753.0 - leadTime) %>% mutate(event = 8)
+driving.p1.events <- rbind(driving.p1.event1, driving.p1.event2, driving.p1.event3, driving.p1.event4, driving.p1.event5, driving.p1.event6, driving.p1.event7)
+```
+
+### Participant2
+
+```{r}
+# import data
+library(dplyr)
+driving.p2.t2 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/驾驶模拟器数据/02-02.csv", header=TRUE) 
+driving.p2.t2 <- subset(driving.p2.t2, select=c(Time, position.X, position.Z, speedInMetresPerSecond, localAccelInMetresPerSecond2.Y, localAccelInMetresPerSecond2.Z, steering, steeringVelocity, throttle, brake, offsetFromLaneCenter)) %>%
+  mutate(RealTime = Time - driving.p2.t2[1,1])
+
+driving.p2.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/驾驶模拟器数据/02-01.csv", header=TRUE) 
+driving.p2.t1 <- subset(driving.p2.t1, select=c(Time, position.X, position.Z, speedInMetresPerSecond, localAccelInMetresPerSecond2.Y, localAccelInMetresPerSecond2.Z, steering, steeringVelocity, throttle, brake, offsetFromLaneCenter)) %>%
+  mutate(RealTime = Time - driving.p2.t1[1,1])
+
+
+# output the data
+write.csv(driving.p2.t2, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p2.t2.csv")
+write.csv(driving.p2.t1, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p2.t1.csv")
+```
+
+```{r}
+# Match the two Trial
+p2.t2.event1 <- subset(driving.p2.t2, RealTime < 98.1 & RealTime > 98.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p2.t2.event2 <- subset(driving.p2.t2, RealTime < 231.1 & RealTime > 231.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p2.t2.event3 <- subset(driving.p2.t2, RealTime < 278.1 & RealTime > 278.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p2.t2.event4 <- subset(driving.p2.t2, RealTime < 443.1 & RealTime > 443.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p2.t2.event5 <- subset(driving.p2.t2, RealTime < 558.1 & RealTime > 558.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p2.t2.event6 <- subset(driving.p2.t2, RealTime < 659.1 & RealTime > 659.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p2.t2.event7 <- subset(driving.p2.t2, RealTime < 767.1 & RealTime > 767.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+driving.p2.t1 <- mutate(driving.p2.t1, To1 = sqrt((driving.p2.t1$position.X-p2.t2.event1[[1]])^2 + (driving.p2.t1$position.Z-p2.t2.event1[[2]])^2))
+driving.p2.t1 <- mutate(driving.p2.t1, To2 = sqrt((driving.p2.t1$position.X-p2.t2.event2[[1]])^2 + (driving.p2.t1$position.Z-p2.t2.event2[[2]])^2))
+driving.p2.t1 <- mutate(driving.p2.t1, To3 = sqrt((driving.p2.t1$position.X-p2.t2.event3[[1]])^2 + (driving.p2.t1$position.Z-p2.t2.event3[[2]])^2))
+driving.p2.t1 <- mutate(driving.p2.t1, To5 = sqrt((driving.p2.t1$position.X-p2.t2.event4[[1]])^2 + (driving.p2.t1$position.Z-p2.t2.event4[[2]])^2))
+driving.p2.t1 <- mutate(driving.p2.t1, To6 = sqrt((driving.p2.t1$position.X-p2.t2.event5[[1]])^2 + (driving.p2.t1$position.Z-p2.t2.event5[[2]])^2))
+driving.p2.t1 <- mutate(driving.p2.t1, To7 = sqrt((driving.p2.t1$position.X-p2.t2.event6[[1]])^2 + (driving.p2.t1$position.Z-p2.t2.event6[[2]])^2))
+driving.p2.t1 <- mutate(driving.p2.t1, To8 = sqrt((driving.p2.t1$position.X-p2.t2.event7[[1]])^2 + (driving.p2.t1$position.Z-p2.t2.event7[[2]])^2))
+write.csv(driving.p2.t1, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p2.t1.csv")
+
+```
+
+```{r}
+# Store the driving response in the event-related period
+driving.p2.event1 <- subset(driving.p2.t2, RealTime < 98 + afterTime & RealTime > 98 - leadTime) %>% mutate(event = 1)
+driving.p2.event2 <- subset(driving.p2.t2, RealTime < 231 + afterTime & RealTime > 231.0 - leadTime) %>% mutate(event = 2)
+driving.p2.event3 <- subset(driving.p2.t2, RealTime < 278 + afterTime & RealTime > 278.0 - leadTime) %>% mutate(event = 3)
+driving.p2.event4 <- subset(driving.p2.t2, RealTime < 443 + afterTime & RealTime > 443.0 - leadTime) %>% mutate(event = 5)
+driving.p2.event5 <- subset(driving.p2.t2, RealTime < 558 + afterTime & RealTime > 558.0 - leadTime) %>% mutate(event = 6)
+driving.p2.event6 <- subset(driving.p2.t2, RealTime < 659 + afterTime & RealTime > 659.0 - leadTime) %>% mutate(event = 7)
+driving.p2.event7 <- subset(driving.p2.t2, RealTime < 767 + afterTime & RealTime > 767.0 - leadTime) %>% mutate(event = 8)
+driving.p2.events <- rbind(driving.p2.event1, driving.p2.event2, driving.p2.event3, driving.p2.event4, driving.p2.event5, driving.p2.event6, driving.p2.event7) %>% mutate(participant = 02)
+```
+
+### Participant3
+```{r}
+#import data
+driving.p3.t2 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/驾驶模拟器数据/03-02.csv", header=TRUE) 
+driving.p3.t2 <- subset(driving.p3.t2, select=c(Time, position.X, position.Z, speedInMetresPerSecond, localAccelInMetresPerSecond2.Y, localAccelInMetresPerSecond2.Z, steering, steeringVelocity, throttle, brake, offsetFromLaneCenter)) %>%
+  mutate(RealTime = Time - driving.p5.t2[1,1])
+
+driving.p3.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/驾驶模拟器数据/03-01.csv", header=TRUE) %>%
+   subset(select=c(Time, X, Y, Speed, Acceleration, Steering, Brake))
+
+# output the data
+write.csv(driving.p3.t2, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p3.t2.csv")
+write.csv(driving.p3.t1, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p3.t1.csv")
+```
+
+
+```{r}
+# Match the two Trial
+p3.t2.event1 <- subset(driving.p3.t2, RealTime < 104.1 & RealTime > 104.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p3.t2.event2 <- subset(driving.p3.t2, RealTime < 269.1 & RealTime > 269.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p3.t2.event3 <- subset(driving.p3.t2, RealTime < 321.1 & RealTime > 321.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p3.t2.event4 <- subset(driving.p3.t2, RealTime < 493.1 & RealTime > 493.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p3.t2.event5 <- subset(driving.p3.t2, RealTime < 630.1 & RealTime > 630.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p3.t2.event6 <- subset(driving.p3.t2, RealTime < 733.1 & RealTime > 733.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p3.t2.event7 <- subset(driving.p3.t2, RealTime < 841.1 & RealTime > 841.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+driving.p3.t1 <- mutate(driving.p3.t1, To1 = sqrt((driving.p3.t1$X-p3.t2.event1[[1]])^2 + (driving.p3.t1$Y-p3.t2.event1[[2]])^2))
+driving.p3.t1 <- mutate(driving.p3.t1, To2 = sqrt((driving.p3.t1$X-p3.t2.event2[[1]])^2 + (driving.p3.t1$Y-p3.t2.event2[[2]])^2))
+driving.p3.t1 <- mutate(driving.p3.t1, To3 = sqrt((driving.p3.t1$X-p3.t2.event3[[1]])^2 + (driving.p3.t1$Y-p3.t2.event3[[2]])^2))
+driving.p3.t1 <- mutate(driving.p3.t1, To5 = sqrt((driving.p3.t1$X-p3.t2.event4[[1]])^2 + (driving.p3.t1$Y-p3.t2.event4[[2]])^2))
+driving.p3.t1 <- mutate(driving.p3.t1, To6 = sqrt((driving.p3.t1$X-p3.t2.event5[[1]])^2 + (driving.p3.t1$Y-p3.t2.event5[[2]])^2))
+driving.p3.t1 <- mutate(driving.p3.t1, To7 = sqrt((driving.p3.t1$X-p3.t2.event6[[1]])^2 + (driving.p3.t1$Y-p3.t2.event6[[2]])^2))
+driving.p3.t1 <- mutate(driving.p3.t1, To8 = sqrt((driving.p3.t1$X-p3.t2.event7[[1]])^2 + (driving.p3.t1$Y-p3.t2.event7[[2]])^2))
+write.csv(driving.p3.t1, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p3.t1.csv")
+
+```
+
+### Participant 4
+
+
+```{r}
+# import data
+library(dplyr)
+driving.p4.t2 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/驾驶模拟器数据/04-02.csv", header=TRUE) 
+driving.p4.t2 <- subset(driving.p4.t2, select=c(Time, position.X, position.Z, speedInMetresPerSecond, localAccelInMetresPerSecond2.Y, localAccelInMetresPerSecond2.Z, steering, steeringVelocity, throttle, brake, offsetFromLaneCenter)) %>%
+  mutate(RealTime = Time - driving.p4.t2[1,1])
+
+driving.p4.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/驾驶模拟器数据/04-01.csv", header=TRUE) 
+driving.p4.t1 <- subset(driving.p4.t1, select=c(Time, position.X, position.Z, speedInMetresPerSecond, localAccelInMetresPerSecond2.Y, localAccelInMetresPerSecond2.Z, steering, steeringVelocity, throttle, brake, offsetFromLaneCenter)) %>%
+  mutate(RealTime = Time - driving.p4.t1[1,1])
+
+
+# output the data
+write.csv(driving.p4.t2, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p4.t2.csv")
+write.csv(driving.p4.t1, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p4.t1.csv")
+```
+
+```{r}
+# Match the two Trial
+p4.t2.event1 <- subset(driving.p4.t2, RealTime < 93.1 & RealTime > 93) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p4.t2.event2 <- subset(driving.p4.t2, RealTime < 228.1 & RealTime > 228.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p4.t2.event3 <- subset(driving.p4.t2, RealTime < 272.1 & RealTime > 272.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p4.t2.event4 <- subset(driving.p4.t2, RealTime < 420.1 & RealTime > 420.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p4.t2.event5 <- subset(driving.p4.t2, RealTime < 538.1 & RealTime > 538.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p4.t2.event6 <- subset(driving.p4.t2, RealTime < 626.1 & RealTime > 626.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p4.t2.event7 <- subset(driving.p4.t2, RealTime < 719.1 & RealTime > 719.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+driving.p4.t1 <- mutate(driving.p4.t1, To1 = sqrt((driving.p4.t1$position.X-p4.t2.event1[[1]])^2 + (driving.p4.t1$position.Z-p4.t2.event1[[2]])^2))
+driving.p4.t1 <- mutate(driving.p4.t1, To2 = sqrt((driving.p4.t1$position.X-p4.t2.event2[[1]])^2 + (driving.p4.t1$position.Z-p4.t2.event2[[2]])^2))
+driving.p4.t1 <- mutate(driving.p4.t1, To3 = sqrt((driving.p4.t1$position.X-p4.t2.event3[[1]])^2 + (driving.p4.t1$position.Z-p4.t2.event3[[2]])^2))
+driving.p4.t1 <- mutate(driving.p4.t1, To5 = sqrt((driving.p4.t1$position.X-p4.t2.event4[[1]])^2 + (driving.p4.t1$position.Z-p4.t2.event4[[2]])^2))
+driving.p4.t1 <- mutate(driving.p4.t1, To6 = sqrt((driving.p4.t1$position.X-p4.t2.event5[[1]])^2 + (driving.p4.t1$position.Z-p4.t2.event5[[2]])^2))
+driving.p4.t1 <- mutate(driving.p4.t1, To7 = sqrt((driving.p4.t1$position.X-p4.t2.event6[[1]])^2 + (driving.p4.t1$position.Z-p4.t2.event6[[2]])^2))
+driving.p4.t1 <- mutate(driving.p4.t1, To8 = sqrt((driving.p4.t1$position.X-p4.t2.event7[[1]])^2 + (driving.p4.t1$position.Z-p4.t2.event7[[2]])^2))
+write.csv(driving.p4.t1, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p4.t1.csv")
+
+```
+
+```{r}
+# Store the driving response in the event-related period
+driving.p4.event1 <- subset(driving.p4.t2, RealTime < 93 + afterTime & RealTime > 93 - leadTime) %>% mutate(event = 1)
+driving.p4.event2 <- subset(driving.p4.t2, RealTime < 228 + afterTime & RealTime > 228.0 - leadTime) %>% mutate(event = 2)
+driving.p4.event3 <- subset(driving.p4.t2, RealTime < 272 + afterTime & RealTime > 272.0 - leadTime) %>% mutate(event = 3)
+driving.p4.event4 <- subset(driving.p4.t2, RealTime < 420 + afterTime & RealTime > 420.0 - leadTime) %>% mutate(event = 5)
+driving.p4.event5 <- subset(driving.p4.t2, RealTime < 538 + afterTime & RealTime > 538.0 - leadTime) %>% mutate(event = 6)
+driving.p4.event6 <- subset(driving.p4.t2, RealTime < 626 + afterTime & RealTime > 626.0 - leadTime) %>% mutate(event = 7)
+driving.p4.event7 <- subset(driving.p4.t2, RealTime < 719 + afterTime & RealTime > 719.0 - leadTime) %>% mutate(event = 8)
+driving.p4.events <- rbind(driving.p4.event1, driving.p4.event2, driving.p4.event3, driving.p4.event4, driving.p4.event5, driving.p4.event6, driving.p4.event7) %>% mutate(participant = 04)
+```
+
+### Participant 5
+
+```{r}
+# import data
+library(dplyr)
+driving.p5.t2 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/驾驶模拟器数据/05-02.csv", header=TRUE) 
+driving.p5.t2 <- subset(driving.p5.t2, select=c(Time, position.X, position.Z, speedInMetresPerSecond, localAccelInMetresPerSecond2.Y, localAccelInMetresPerSecond2.Z, steering, steeringVelocity, throttle, brake, offsetFromLaneCenter)) %>%
+  mutate(RealTime = Time - driving.p5.t2[1,1])
+
+driving.p5.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/驾驶模拟器数据/05-01.csv", header=TRUE) 
+driving.p5.t1 <- subset(driving.p5.t1, select=c(Time, position.X, position.Z, speedInMetresPerSecond, localAccelInMetresPerSecond2.Y, localAccelInMetresPerSecond2.Z, steering, steeringVelocity, throttle, brake, offsetFromLaneCenter)) %>%
+  mutate(RealTime = Time - driving.p5.t1[1,1])
+
+
+# output the data
+write.csv(driving.p5.t2, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p5.t2.csv")
+write.csv(driving.p5.t1, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p5.t1.csv")
+```
+
+
+```{r}
+# Match the two Trial
+p5.t2.event1 <- subset(driving.p5.t2, RealTime < 96.1 & RealTime > 96.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p5.t2.event2 <- subset(driving.p5.t2, RealTime < 253.1 & RealTime > 253.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p5.t2.event3 <- subset(driving.p5.t2, RealTime < 316.1 & RealTime > 316.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p5.t2.event4 <- subset(driving.p5.t2, RealTime < 509.1 & RealTime > 509.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p5.t2.event5 <- subset(driving.p5.t2, RealTime < 629.1 & RealTime > 629.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p5.t2.event6 <- subset(driving.p5.t2, RealTime < 734.1 & RealTime > 734.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p5.t2.event7 <- subset(driving.p5.t2, RealTime < 855.1 & RealTime > 855.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+driving.p5.t1 <- mutate(driving.p5.t1, To1 = sqrt((driving.p5.t1$position.X-p5.t2.event1[[1]])^2 + (driving.p5.t1$position.Z-p5.t2.event1[[2]])^2))
+driving.p5.t1 <- mutate(driving.p5.t1, To2 = sqrt((driving.p5.t1$position.X-p5.t2.event2[[1]])^2 + (driving.p5.t1$position.Z-p5.t2.event2[[2]])^2))
+driving.p5.t1 <- mutate(driving.p5.t1, To3 = sqrt((driving.p5.t1$position.X-p5.t2.event3[[1]])^2 + (driving.p5.t1$position.Z-p5.t2.event3[[2]])^2))
+driving.p5.t1 <- mutate(driving.p5.t1, To5 = sqrt((driving.p5.t1$position.X-p5.t2.event4[[1]])^2 + (driving.p5.t1$position.Z-p5.t2.event4[[2]])^2))
+driving.p5.t1 <- mutate(driving.p5.t1, To6 = sqrt((driving.p5.t1$position.X-p5.t2.event5[[1]])^2 + (driving.p5.t1$position.Z-p5.t2.event5[[2]])^2))
+driving.p5.t1 <- mutate(driving.p5.t1, To7 = sqrt((driving.p5.t1$position.X-p5.t2.event6[[1]])^2 + (driving.p5.t1$position.Z-p5.t2.event6[[2]])^2))
+driving.p5.t1 <- mutate(driving.p5.t1, To8 = sqrt((driving.p5.t1$position.X-p5.t2.event7[[1]])^2 + (driving.p5.t1$position.Z-p5.t2.event7[[2]])^2))
+write.csv(driving.p5.t1, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p5.t1.csv")
+
+```
+
+```{r}
+# Store the driving response in the event-related period
+driving.p5.event1 <- subset(driving.p5.t2, RealTime < 96 + afterTime & RealTime > 96 - leadTime) %>% mutate(event = 1)
+driving.p5.event2 <- subset(driving.p5.t2, RealTime < 253 + afterTime & RealTime > 253.0 - leadTime) %>% mutate(event = 2)
+driving.p5.event3 <- subset(driving.p5.t2, RealTime < 316 + afterTime & RealTime > 316.0 - leadTime) %>% mutate(event = 3)
+driving.p5.event4 <- subset(driving.p5.t2, RealTime < 509 + afterTime & RealTime > 509.0 - leadTime) %>% mutate(event = 5)
+driving.p5.event5 <- subset(driving.p5.t2, RealTime < 629 + afterTime & RealTime > 629.0 - leadTime) %>% mutate(event = 6)
+driving.p5.event6 <- subset(driving.p5.t2, RealTime < 734 + afterTime & RealTime > 734.0 - leadTime) %>% mutate(event = 7)
+driving.p5.event7 <- subset(driving.p5.t2, RealTime < 855 + afterTime & RealTime > 855.0 - leadTime) %>% mutate(event = 8)
+driving.p5.events <- rbind(driving.p5.event1, driving.p5.event2, driving.p5.event3, driving.p5.event4, driving.p5.event5, driving.p5.event6, driving.p5.event7) %>% mutate(participant = 05)
+```
+
+### Participant 6
+
+```{r}
+# import data
+library(dplyr)
+driving.p6.t2 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/驾驶模拟器数据/06-02.csv", header=TRUE) 
+driving.p6.t2 <- subset(driving.p6.t2, select=c(Time, position.X, position.Z, speedInMetresPerSecond, localAccelInMetresPerSecond2.Y, localAccelInMetresPerSecond2.Z, steering, steeringVelocity, throttle, brake, offsetFromLaneCenter)) %>%
+  mutate(RealTime = Time - driving.p6.t2[1,1])
+
+driving.p6.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/驾驶模拟器数据/06-01.csv", header=TRUE) 
+driving.p6.t1 <- subset(driving.p6.t1, select=c(Time, position.X, position.Z, speedInMetresPerSecond, localAccelInMetresPerSecond2.Y, localAccelInMetresPerSecond2.Z, steering, steeringVelocity, throttle, brake, offsetFromLaneCenter)) %>%
+  mutate(RealTime = Time - driving.p6.t1[1,1])
+
+
+# output the data
+write.csv(driving.p6.t2, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p6.t2.csv")
+write.csv(driving.p6.t1, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p6.t1.csv")
+```
+
+
+```{r}
+# Match the two Trial
+p6.t2.event1 <- subset(driving.p6.t2, RealTime < 109.1 & RealTime > 109.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p6.t2.event2 <- subset(driving.p6.t2, RealTime < 274.1 & RealTime > 274.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p6.t2.event3 <- subset(driving.p6.t2, RealTime < 329.1 & RealTime > 329.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p6.t2.event4 <- subset(driving.p6.t2, RealTime < 511.1 & RealTime > 511.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p6.t2.event5 <- subset(driving.p6.t2, RealTime < 649.1 & RealTime > 649.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p6.t2.event6 <- subset(driving.p6.t2, RealTime < 744.1 & RealTime > 744.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p6.t2.event7 <- subset(driving.p6.t2, RealTime < 869.1 & RealTime > 869.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+driving.p6.t1 <- mutate(driving.p6.t1, To1 = sqrt((driving.p6.t1$position.X-p6.t2.event1[[1]])^2 + (driving.p6.t1$position.Z-p6.t2.event1[[2]])^2))
+driving.p6.t1 <- mutate(driving.p6.t1, To2 = sqrt((driving.p6.t1$position.X-p6.t2.event2[[1]])^2 + (driving.p6.t1$position.Z-p6.t2.event2[[2]])^2))
+driving.p6.t1 <- mutate(driving.p6.t1, To3 = sqrt((driving.p6.t1$position.X-p6.t2.event3[[1]])^2 + (driving.p6.t1$position.Z-p6.t2.event3[[2]])^2))
+driving.p6.t1 <- mutate(driving.p6.t1, To5 = sqrt((driving.p6.t1$position.X-p6.t2.event4[[1]])^2 + (driving.p6.t1$position.Z-p6.t2.event4[[2]])^2))
+driving.p6.t1 <- mutate(driving.p6.t1, To6 = sqrt((driving.p6.t1$position.X-p6.t2.event5[[1]])^2 + (driving.p6.t1$position.Z-p6.t2.event5[[2]])^2))
+driving.p6.t1 <- mutate(driving.p6.t1, To7 = sqrt((driving.p6.t1$position.X-p6.t2.event6[[1]])^2 + (driving.p6.t1$position.Z-p6.t2.event6[[2]])^2))
+driving.p6.t1 <- mutate(driving.p6.t1, To8 = sqrt((driving.p6.t1$position.X-p6.t2.event7[[1]])^2 + (driving.p6.t1$position.Z-p6.t2.event7[[2]])^2))
+write.csv(driving.p6.t1, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p6.t1.csv")
+
+```
+
+```{r}
+# Store the driving response in the event-related period
+driving.p6.event1 <- subset(driving.p6.t2, RealTime < 109 + afterTime & RealTime > 109 - leadTime) %>% mutate(event = 1)
+driving.p6.event2 <- subset(driving.p6.t2, RealTime < 274 + afterTime & RealTime > 274.0 - leadTime) %>% mutate(event = 2)
+driving.p6.event3 <- subset(driving.p6.t2, RealTime < 329 + afterTime & RealTime > 329.0 - leadTime) %>% mutate(event = 3)
+driving.p6.event4 <- subset(driving.p6.t2, RealTime < 511 + afterTime & RealTime > 511.0 - leadTime) %>% mutate(event = 5)
+driving.p6.event5 <- subset(driving.p6.t2, RealTime < 649 + afterTime & RealTime > 649.0 - leadTime) %>% mutate(event = 6)
+driving.p6.event6 <- subset(driving.p6.t2, RealTime < 744 + afterTime & RealTime > 744.0 - leadTime) %>% mutate(event = 7)
+driving.p6.event7 <- subset(driving.p6.t2, RealTime < 869 + afterTime & RealTime > 869.0 - leadTime) %>% mutate(event = 8)
+driving.p6.events <- rbind(driving.p6.event1, driving.p6.event2, driving.p6.event3, driving.p6.event4, driving.p6.event5, driving.p6.event6, driving.p6.event7) %>% mutate(participant = 06)
+```
+
+### Participant 7
+
+```{r}
+# import data
+library(dplyr)
+driving.p7.t2 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/驾驶模拟器数据/07-02.csv", header=TRUE) 
+driving.p7.t2 <- subset(driving.p7.t2, select=c(Time, position.X, position.Z, speedInMetresPerSecond, localAccelInMetresPerSecond2.Y, localAccelInMetresPerSecond2.Z, steering, steeringVelocity, throttle, brake, offsetFromLaneCenter)) %>%
+  mutate(RealTime = Time - driving.p7.t2[1,1])
+
+driving.p7.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/驾驶模拟器数据/07-01.csv", header=TRUE) 
+driving.p7.t1 <- subset(driving.p7.t1, select=c(Time, position.X, position.Z, speedInMetresPerSecond, localAccelInMetresPerSecond2.Y, localAccelInMetresPerSecond2.Z, steering, steeringVelocity, throttle, brake, offsetFromLaneCenter)) %>%
+  mutate(RealTime = Time - driving.p7.t1[1,1])
+
+
+# output the data
+write.csv(driving.p7.t2, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p7.t2.csv")
+write.csv(driving.p7.t1, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p7.t1.csv")
+```
+
+
+```{r}
+# Match the two Trial
+p7.t2.event1 <- subset(driving.p7.t2, RealTime < 100.1 & RealTime > 100.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p7.t2.event2 <- subset(driving.p7.t2, RealTime < 239.1 & RealTime > 239.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p7.t2.event3 <- subset(driving.p7.t2, RealTime < 286.1 & RealTime > 286.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p7.t2.event4 <- subset(driving.p7.t2, RealTime < 452.1 & RealTime > 452.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p7.t2.event5 <- subset(driving.p7.t2, RealTime < 575.1 & RealTime > 575.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p7.t2.event6 <- subset(driving.p7.t2, RealTime < 662.1 & RealTime > 662.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p7.t2.event7 <- subset(driving.p7.t2, RealTime < 764.1 & RealTime > 764.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+driving.p7.t1 <- mutate(driving.p7.t1, To1 = sqrt((driving.p7.t1$position.X-p7.t2.event1[[1]])^2 + (driving.p7.t1$position.Z-p7.t2.event1[[2]])^2))
+driving.p7.t1 <- mutate(driving.p7.t1, To2 = sqrt((driving.p7.t1$position.X-p7.t2.event2[[1]])^2 + (driving.p7.t1$position.Z-p7.t2.event2[[2]])^2))
+driving.p7.t1 <- mutate(driving.p7.t1, To3 = sqrt((driving.p7.t1$position.X-p7.t2.event3[[1]])^2 + (driving.p7.t1$position.Z-p7.t2.event3[[2]])^2))
+driving.p7.t1 <- mutate(driving.p7.t1, To5 = sqrt((driving.p7.t1$position.X-p7.t2.event4[[1]])^2 + (driving.p7.t1$position.Z-p7.t2.event4[[2]])^2))
+driving.p7.t1 <- mutate(driving.p7.t1, To6 = sqrt((driving.p7.t1$position.X-p7.t2.event5[[1]])^2 + (driving.p7.t1$position.Z-p7.t2.event5[[2]])^2))
+driving.p7.t1 <- mutate(driving.p7.t1, To7 = sqrt((driving.p7.t1$position.X-p7.t2.event6[[1]])^2 + (driving.p7.t1$position.Z-p7.t2.event6[[2]])^2))
+driving.p7.t1 <- mutate(driving.p7.t1, To8 = sqrt((driving.p7.t1$position.X-p7.t2.event7[[1]])^2 + (driving.p7.t1$position.Z-p7.t2.event7[[2]])^2))
+write.csv(driving.p7.t1, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p7.t1.csv")
+
+```
+
+```{r}
+# Store the driving response in the event-related period
+driving.p7.event1 <- subset(driving.p7.t2, RealTime < 100 + afterTime & RealTime > 100 - leadTime) %>% mutate(event = 1)
+driving.p7.event2 <- subset(driving.p7.t2, RealTime < 239 + afterTime & RealTime > 239.0 - leadTime) %>% mutate(event = 2)
+driving.p7.event3 <- subset(driving.p7.t2, RealTime < 286 + afterTime & RealTime > 286.0 - leadTime) %>% mutate(event = 3)
+driving.p7.event4 <- subset(driving.p7.t2, RealTime < 452 + afterTime & RealTime > 452.0 - leadTime) %>% mutate(event = 5)
+driving.p7.event5 <- subset(driving.p7.t2, RealTime < 575 + afterTime & RealTime > 575.0 - leadTime) %>% mutate(event = 6)
+driving.p7.event6 <- subset(driving.p7.t2, RealTime < 662 + afterTime & RealTime > 662.0 - leadTime) %>% mutate(event = 7)
+driving.p7.event7 <- subset(driving.p7.t2, RealTime < 764 + afterTime & RealTime > 764.0 - leadTime) %>% mutate(event = 8)
+driving.p7.events <- rbind(driving.p7.event1, driving.p7.event2, driving.p7.event3, driving.p7.event4, driving.p7.event5, driving.p7.event6, driving.p7.event7) %>% mutate(participant = 07)
+```
+
+### Participant 8
+
+```{r}
+# import data
+library(dplyr)
+driving.p8.t2 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/驾驶模拟器数据/08-02.csv", header=TRUE) 
+driving.p8.t2 <- subset(driving.p8.t2, select=c(Time, position.X, position.Z, speedInMetresPerSecond, localAccelInMetresPerSecond2.Y, localAccelInMetresPerSecond2.Z, steering, steeringVelocity, throttle, brake, offsetFromLaneCenter)) %>%
+  mutate(RealTime = Time - driving.p8.t2[1,1])
+
+driving.p8.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/驾驶模拟器数据/08-01.csv", header=TRUE) 
+driving.p8.t1 <- subset(driving.p8.t1, select=c(Time, position.X, position.Z, speedInMetresPerSecond, localAccelInMetresPerSecond2.Y, localAccelInMetresPerSecond2.Z, steering, steeringVelocity, throttle, brake, offsetFromLaneCenter)) %>%
+  mutate(RealTime = Time - driving.p8.t1[1,1])
+
+
+# output the data
+write.csv(driving.p8.t2, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p8.t2.csv")
+write.csv(driving.p8.t1, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p8.t1.csv")
+```
+
+
+```{r}
+# Match the two Trial
+p8.t2.event1 <- subset(driving.p8.t2, RealTime < 96.1 & RealTime > 96) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p8.t2.event2 <- subset(driving.p8.t2, RealTime < 245.1 & RealTime > 245.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p8.t2.event3 <- subset(driving.p8.t2, RealTime < 292.1 & RealTime > 292.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p8.t2.event4 <- subset(driving.p8.t2, RealTime < 466.1 & RealTime > 466.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p8.t2.event5 <- subset(driving.p8.t2, RealTime < 599.1 & RealTime > 599.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p8.t2.event6 <- subset(driving.p8.t2, RealTime < 706.1 & RealTime > 706.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p8.t2.event7 <- subset(driving.p8.t2, RealTime < 848.1 & RealTime > 848.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+driving.p8.t1 <- mutate(driving.p8.t1, To1 = sqrt((driving.p8.t1$position.X-p8.t2.event1[[1]])^2 + (driving.p8.t1$position.Z-p8.t2.event1[[2]])^2))
+driving.p8.t1 <- mutate(driving.p8.t1, To2 = sqrt((driving.p8.t1$position.X-p8.t2.event2[[1]])^2 + (driving.p8.t1$position.Z-p8.t2.event2[[2]])^2))
+driving.p8.t1 <- mutate(driving.p8.t1, To3 = sqrt((driving.p8.t1$position.X-p8.t2.event3[[1]])^2 + (driving.p8.t1$position.Z-p8.t2.event3[[2]])^2))
+driving.p8.t1 <- mutate(driving.p8.t1, To5 = sqrt((driving.p8.t1$position.X-p8.t2.event4[[1]])^2 + (driving.p8.t1$position.Z-p8.t2.event4[[2]])^2))
+driving.p8.t1 <- mutate(driving.p8.t1, To6 = sqrt((driving.p8.t1$position.X-p8.t2.event5[[1]])^2 + (driving.p8.t1$position.Z-p8.t2.event5[[2]])^2))
+driving.p8.t1 <- mutate(driving.p8.t1, To7 = sqrt((driving.p8.t1$position.X-p8.t2.event6[[1]])^2 + (driving.p8.t1$position.Z-p8.t2.event6[[2]])^2))
+driving.p8.t1 <- mutate(driving.p8.t1, To8 = sqrt((driving.p8.t1$position.X-p8.t2.event7[[1]])^2 + (driving.p8.t1$position.Z-p8.t2.event7[[2]])^2))
+write.csv(driving.p8.t1, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p8.t1.csv")
+
+```
+
+```{r}
+# Store the driving response in the event-related period
+driving.p8.event1 <- subset(driving.p8.t2, RealTime < 96 + afterTime & RealTime > 96 - leadTime) %>% mutate(event = 1)
+driving.p8.event2 <- subset(driving.p8.t2, RealTime < 245 + afterTime & RealTime > 245.0 - leadTime) %>% mutate(event = 2)
+driving.p8.event3 <- subset(driving.p8.t2, RealTime < 292 + afterTime & RealTime > 292.0 - leadTime) %>% mutate(event = 3)
+driving.p8.event4 <- subset(driving.p8.t2, RealTime < 466 + afterTime & RealTime > 466.0 - leadTime) %>% mutate(event = 5)
+driving.p8.event5 <- subset(driving.p8.t2, RealTime < 599 + afterTime & RealTime > 599.0 - leadTime) %>% mutate(event = 6)
+driving.p8.event6 <- subset(driving.p8.t2, RealTime < 706 + afterTime & RealTime > 706.0 - leadTime) %>% mutate(event = 7)
+driving.p8.event7 <- subset(driving.p8.t2, RealTime < 848 + afterTime & RealTime > 848.0 - leadTime) %>% mutate(event = 8)
+driving.p8.events <- rbind(driving.p8.event1, driving.p8.event2, driving.p8.event3, driving.p8.event4, driving.p8.event5, driving.p8.event6, driving.p8.event7) %>% mutate(participant = 08)
+```
+### Participant 9
+
+```{r}
+# import data
+library(dplyr)
+driving.p9.t2 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/驾驶模拟器数据/09-02.csv", header=TRUE) 
+driving.p9.t2 <- subset(driving.p9.t2, select=c(Time, position.X, position.Z, speedInMetresPerSecond, localAccelInMetresPerSecond2.Y, localAccelInMetresPerSecond2.Z, steering, steeringVelocity, throttle, brake, offsetFromLaneCenter)) %>%
+  mutate(RealTime = Time - driving.p9.t2[1,1])
+
+driving.p9.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/驾驶模拟器数据/09-01.csv", header=TRUE) 
+driving.p9.t1 <- subset(driving.p9.t1, select=c(Time, position.X, position.Z, speedInMetresPerSecond, localAccelInMetresPerSecond2.Y, localAccelInMetresPerSecond2.Z, steering, steeringVelocity, throttle, brake, offsetFromLaneCenter)) %>%
+  mutate(RealTime = Time - driving.p9.t1[1,1])
+
+
+# output the data
+write.csv(driving.p9.t2, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p9.t2.csv")
+write.csv(driving.p9.t1, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p9.t1.csv")
+```
+
+
+```{r}
+# Match the two Trial
+p9.t2.event1 <- subset(driving.p9.t2, RealTime < 126.1 & RealTime > 126.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p9.t2.event2 <- subset(driving.p9.t2, RealTime < 298.1 & RealTime > 298.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p9.t2.event3 <- subset(driving.p9.t2, RealTime < 354.1 & RealTime > 354.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p9.t2.event4 <- subset(driving.p9.t2, RealTime < 541.1 & RealTime > 541.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p9.t2.event5 <- subset(driving.p9.t2, RealTime < 696.1 & RealTime > 696.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p9.t2.event6 <- subset(driving.p9.t2, RealTime < 803.1 & RealTime > 803.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+p9.t2.event7 <- subset(driving.p9.t2, RealTime < 963.1 & RealTime > 963.0) %>%
+  select(starts_with("position")) %>%
+  apply(2, mean)
+driving.p9.t1 <- mutate(driving.p9.t1, To1 = sqrt((driving.p9.t1$position.X-p9.t2.event1[[1]])^2 + (driving.p9.t1$position.Z-p9.t2.event1[[2]])^2))
+driving.p9.t1 <- mutate(driving.p9.t1, To2 = sqrt((driving.p9.t1$position.X-p9.t2.event2[[1]])^2 + (driving.p9.t1$position.Z-p9.t2.event2[[2]])^2))
+driving.p9.t1 <- mutate(driving.p9.t1, To3 = sqrt((driving.p9.t1$position.X-p9.t2.event3[[1]])^2 + (driving.p9.t1$position.Z-p9.t2.event3[[2]])^2))
+driving.p9.t1 <- mutate(driving.p9.t1, To5 = sqrt((driving.p9.t1$position.X-p9.t2.event4[[1]])^2 + (driving.p9.t1$position.Z-p9.t2.event4[[2]])^2))
+driving.p9.t1 <- mutate(driving.p9.t1, To6 = sqrt((driving.p9.t1$position.X-p9.t2.event5[[1]])^2 + (driving.p9.t1$position.Z-p9.t2.event5[[2]])^2))
+driving.p9.t1 <- mutate(driving.p9.t1, To7 = sqrt((driving.p9.t1$position.X-p9.t2.event6[[1]])^2 + (driving.p9.t1$position.Z-p9.t2.event6[[2]])^2))
+driving.p9.t1 <- mutate(driving.p9.t1, To8 = sqrt((driving.p9.t1$position.X-p9.t2.event7[[1]])^2 + (driving.p9.t1$position.Z-p9.t2.event7[[2]])^2))
+write.csv(driving.p9.t1, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p9.t1.csv")
+
+```
+
+```{r}
+# Store the driving response in the event-related period
+driving.p9.event1 <- subset(driving.p9.t2, RealTime < 126 + afterTime & RealTime > 126 - leadTime) %>% mutate(event = 1)
+driving.p9.event2 <- subset(driving.p9.t2, RealTime < 298 + afterTime & RealTime > 298.0 - leadTime) %>% mutate(event = 2)
+driving.p9.event3 <- subset(driving.p9.t2, RealTime < 354 + afterTime & RealTime > 354.0 - leadTime) %>% mutate(event = 3)
+driving.p9.event4 <- subset(driving.p9.t2, RealTime < 541 + afterTime & RealTime > 541.0 - leadTime) %>% mutate(event = 5)
+driving.p9.event5 <- subset(driving.p9.t2, RealTime < 696 + afterTime & RealTime > 696.0 - leadTime) %>% mutate(event = 6)
+driving.p9.event6 <- subset(driving.p9.t2, RealTime < 803 + afterTime & RealTime > 803.0 - leadTime) %>% mutate(event = 7)
+driving.p9.event7 <- subset(driving.p9.t2, RealTime < 963 + afterTime & RealTime > 963.0 - leadTime) %>% mutate(event = 8)
+driving.p9.events <- rbind(driving.p9.event1, driving.p9.event2, driving.p9.event3, driving.p9.event4, driving.p9.event5, driving.p9.event6, driving.p9.event7) %>% mutate(participant = 09)
+```
+
+### Participant10
+
+```{r}
+# import data
+library(dplyr)
+driving.p10.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/驾驶模拟器数据/10-01.csv", header=TRUE) 
+
+driving.p10.t1 <- subset(driving.p10.t1, select=c(Time, position.X, position.Z, speedInMetresPerSecond, localAccelInMetresPerSecond2.Y, localAccelInMetresPerSecond2.Z, steering, steeringVelocity, throttle, brake, offsetFromLaneCenter)) %>%
+  mutate(RealTime = Time - driving.p10.t1[1,1])
+
+driving.p10.t2 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/驾驶模拟器数据/10-02.csv", header=TRUE) %>%
+   subset(select=c(Time, X, Y, Speed, Acceleration, Steering, Brake))
+
+# output the data
+write.csv(driving.p10.t2, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p10.t2.csv")
+write.csv(driving.p10.t1, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p10.t1.csv")
+```
+
+```{r}
+# Match the two Trial
+p10.t2.event1 <- subset(driving.p10.t2, Time < 96.1 & Time > 96.0) %>%
+  select(c(X, Y)) %>%
+  apply(2, mean)
+p10.t2.event2 <- subset(driving.p10.t2, Time < 242.1 & Time > 242.0) %>%
+  select(c(X, Y)) %>%
+  apply(2, mean)
+p10.t2.event3 <- subset(driving.p10.t2, Time < 298.1 & Time > 298.0) %>%
+  select(c(X, Y)) %>%
+  apply(2, mean)
+p10.t2.event4 <- subset(driving.p10.t2, Time < 476.1 & Time > 476.0) %>%
+  select(c(X, Y)) %>%
+  apply(2, mean)
+p10.t2.event5 <- subset(driving.p10.t2, Time < 605.1 & Time > 605.0) %>%
+  select(c(X, Y)) %>%
+  apply(2, mean)
+p10.t2.event6 <- subset(driving.p10.t2, Time < 698.1 & Time > 698.0) %>%
+  select(c(X, Y)) %>%
+  apply(2, mean)
+p10.t2.event7 <- subset(driving.p10.t2, Time < 833.1 & Time > 833.0) %>%
+  select(c(X, Y)) %>%
+  apply(2, mean)
+driving.p10.t1 <- mutate(driving.p10.t1, To1 = sqrt((driving.p10.t1$position.X-p10.t2.event1[[1]])^2 + (driving.p10.t1$position.Z-p10.t2.event1[[2]])^2))
+driving.p10.t1 <- mutate(driving.p10.t1, To2 = sqrt((driving.p10.t1$position.X-p10.t2.event2[[1]])^2 + (driving.p10.t1$position.Z-p10.t2.event2[[2]])^2))
+driving.p10.t1 <- mutate(driving.p10.t1, To3 = sqrt((driving.p10.t1$position.X-p10.t2.event3[[1]])^2 + (driving.p10.t1$position.Z-p10.t2.event3[[2]])^2))
+driving.p10.t1 <- mutate(driving.p10.t1, To5 = sqrt((driving.p10.t1$position.X-p10.t2.event4[[1]])^2 + (driving.p10.t1$position.Z-p10.t2.event4[[2]])^2))
+driving.p10.t1 <- mutate(driving.p10.t1, To6 = sqrt((driving.p10.t1$position.X-p10.t2.event5[[1]])^2 + (driving.p10.t1$position.Z-p10.t2.event5[[2]])^2))
+driving.p10.t1 <- mutate(driving.p10.t1, To7 = sqrt((driving.p10.t1$position.X-p10.t2.event6[[1]])^2 + (driving.p10.t1$position.Z-p10.t2.event6[[2]])^2))
+driving.p10.t1 <- mutate(driving.p10.t1, To8 = sqrt((driving.p10.t1$position.X-p10.t2.event7[[1]])^2 + (driving.p10.t1$position.Z-p10.t2.event7[[2]])^2))
+write.csv(driving.p10.t1, file = "/Volumes/DATA/人因学测量用素材/实验数据/driving.p10.t1.csv")
+
+```
+
+```{r}
+# Store the driving response in the event-related period
+driving.p10.event1 <- subset(driving.p10.t2, Time < 96 + afterTime & Time > 96 - leadTime) %>% mutate(event = 1)
+driving.p10.event2 <- subset(driving.p10.t2, Time < 242 + afterTime & Time > 242.0 - leadTime) %>% mutate(event = 2)
+driving.p10.event3 <- subset(driving.p10.t2, Time < 298 + afterTime & Time > 298.0 - leadTime) %>% mutate(event = 3)
+driving.p10.event4 <- subset(driving.p10.t2, Time < 476 + afterTime & Time > 476.0 - leadTime) %>% mutate(event = 5)
+driving.p10.event5 <- subset(driving.p10.t2, Time < 605 + afterTime & Time > 605.0 - leadTime) %>% mutate(event = 6)
+driving.p10.event6 <- subset(driving.p10.t2, Time < 698 + afterTime & Time > 698.0 - leadTime) %>% mutate(event = 7)
+driving.p10.event7 <- subset(driving.p10.t2, Time < 833 + afterTime & Time > 833.0 - leadTime) %>% mutate(event = 8)
+driving.p10.events <- rbind(driving.p10.event1, driving.p10.event2, driving.p10.event3, driving.p10.event4, driving.p10.event5, driving.p10.event6, driving.p10.event7) %>% mutate(participant = 10)
+```
+
+
+## The facial Feature
+
+### Manipulate the raw data
+
+```{r}
+library(dplyr)
+lT = 0.5
+aT = 2
+QT = 1
+HT = 10
+# Participant1
+listOfStressTime <- read.csv("~/Documents/Graduate3/HFM/Group Project/实验数据/面部特征/listOfStressTime.csv", header=T)
+listOfEventTime <- read.csv("~/Documents/Graduate3/HFM/Group Project/实验数据/面部特征/listOfEventTime.csv", header=T)
+EventTime <- listOfEventTime[1,]
+StressTime <- listOfStressTime[1,]
+stressDemarcate <- function(time) {
+  events <- paste0("event", 1:7)
+  for (i in 1:7) {
+    assign(events[i],  StressTime[1] + StressTime[i+1])
+  }
+  time <- time / 1000
+  if((time > event1 - lT & time < event1 + aT) | (time > event2 - lT & time < event2 + aT) |(time > event3 - lT & time < event3 + aT)|(time > event5 - lT & time < event5 + aT)|(time > event6 - lT & time < event6 + aT) |(time > event7 - lT & time < event7 + aT) ) {
+    return(1)
+  } else {
+    return(0)
+  }
+}
+
+stressDemarcate2 <- function(time) {
+  events <- paste0("event", 1:7)
+  for (i in 1:7) {
+    assign(events[i],  EventTime[1] + EventTime[i+1])
+  }
+  time <- time / 1000
+  if((time > event1 - QT & time < event1 + HT) | (time > event2 - QT & time < event2 + HT) |(time > event3 - QT & time < event3 + HT)|(time > event5 - QT & time < event5 + HT)|(time > event6 - QT & time < event6 + HT) |(time > event7 - QT & time < event7 + HT) ) {
+    return(0)
+  } else {
+    return(1)
+  }
+}
+
+facial.p1.t2 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/102.csv") 
+facial.p1.t2 <- mutate(facial.p1.t2, accurateTime = as.character(facial.p1.t2$accurateTime)) %>% mutate(timeStamp = timeStamp -  as.numeric(substr(facial.p1.t2$accurateTime, 1, 7))*3600*1000)
+stressLevel <- sapply(facial.p1.t2$timeStamp, stressDemarcate)
+facial.p1.t2 <-cbind(facial.p1.t2, stressLevel)
+facial.p1.t2.L <- filter(facial.p1.t2, stressLevel == 1)
+write.csv(facial.p1.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p1.t2.L.csv")
+```
+
+
+```{r}
+
+facial.p1.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/101.csv") 
+facial.p1.t1 <- mutate(facial.p1.t1, accurateTime = as.character(facial.p1.t1$accurateTime))
+stressLevel <- sapply(facial.p1.t1$timeStamp, stressDemarcate2)
+facial.p1.t1 <- cbind(facial.p1.t1, stressLevel)
+facial.p1.t1.L <- filter(facial.p1.t1, stressLevel == 0)
+write.csv(facial.p1.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p1.t1.L.csv")
+
+
+```
+# Participant2
+```{r}
+library(dplyr)
+lT = 0.5
+aT = 2
+QT = 1
+HT = 10
+listOfStressTime <- read.csv("~/Documents/Graduate3/HFM/Group Project/实验数据/面部特征/listOfStressTime.csv", header=T)
+listOfEventTime <- read.csv("~/Documents/Graduate3/HFM/Group Project/实验数据/面部特征/listOfEventTime.csv", header=T)
+EventTime <- listOfEventTime[2,]
+StressTime <- listOfStressTime[2,]
+stressDemarcate <- function(time) {
+  events <- paste0("event", 1:7)
+  for (i in 1:7) {
+    assign(events[i],  StressTime[1] + StressTime[i+1])
+  }
+  time <- time / 1000
+  if((time > event1 - lT & time < event1 + aT) | (time > event2 - lT & time < event2 + aT) |(time > event3 - lT & time < event3 + aT)|(time > event4 - lT & time < event4 + aT)|(time > event5 - lT & time < event5 + aT)|(time > event6 - lT & time < event6 + aT) |(time > event7 - lT & time < event7 + aT) ) {
+    return(1)
+  } else {
+    return(0)
+  }
+}
+
+stressDemarcate2 <- function(time) {
+  events <- paste0("event", 1:7)
+  for (i in 1:7) {
+    assign(events[i],  EventTime[1] + EventTime[i+1])
+  }
+  time <- time / 1000
+  if((time > event1 - QT & time < event1 + HT) | (time > event2 - QT & time < event2 + HT) |(time > event3 - QT & time < event3 + HT)|(time > event4 - QT & time < event4 + HT)|(time > event5 - QT & time < event5 + HT)|(time > event6 - QT & time < event6 + HT) |(time > event7 - QT & time < event7 + HT) ) {
+    return(0)
+  } else {
+    return(1)
+  }
+}
+
+facial.p2.t2 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/202.csv") 
+facial.p2.t2 <- mutate(facial.p2.t2, accurateTime = as.character(facial.p2.t2$accurateTime)) %>% mutate(timeStamp = timeStamp -  as.numeric(substr(facial.p2.t2$accurateTime, 1, 7))*3600*1000)
+stressLevel <- sapply(facial.p2.t2$timeStamp, stressDemarcate)
+facial.p2.t2 <-cbind(facial.p2.t2, stressLevel)
+facial.p2.t2.L <- filter(facial.p2.t2, stressLevel == 1)
+write.csv(facial.p2.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p2.t2.L.csv")
+
+facial.p2.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/201.csv") 
+facial.p2.t1 <- mutate(facial.p2.t1, accurateTime = as.character(facial.p2.t1$accurateTime)) %>% mutate(timeStamp = timeStamp - as.numeric(substr(facial.p2.t1$accurateTime, 1, 7))*3600*1000)
+stressLevel <- sapply(facial.p2.t1$timeStamp, stressDemarcate2)
+facial.p2.t1 <- cbind(facial.p2.t1, stressLevel)
+facial.p2.t1.L <- filter(facial.p2.t1, stressLevel == 0)
+write.csv(facial.p2.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p2.t1.L.csv")
+
+
+
+# Participant 3
+StressTime <- listOfStressTime[3,]
+EventTime <- listOfEventTime[3,]
+facial.p3.t2 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/302.csv") 
+facial.p3.t2 <- mutate(facial.p3.t2, accurateTime = as.character(facial.p3.t2$accurateTime)) %>% mutate(timeStamp = timeStamp -  as.numeric(substr(facial.p3.t2$accurateTime, 1, 7))*3600*1000)
+stressLevel <- sapply(facial.p3.t2$timeStamp, stressDemarcate)
+facial.p3.t2 <-cbind(facial.p3.t2, stressLevel)
+facial.p3.t2.L <- filter(facial.p3.t2, stressLevel == 1)
+write.csv(facial.p3.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p3.t2.L.csv")
+
+facial.p3.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/301.csv") 
+facial.p3.t1 <- mutate(facial.p3.t1, accurateTime = as.character(facial.p3.t1$accurateTime)) %>% mutate(timeStamp = timeStamp - as.numeric(substr(facial.p3.t1$accurateTime, 1, 7))*3600*1000)
+stressLevel <- sapply(facial.p3.t1$timeStamp, stressDemarcate2)
+facial.p3.t1 <- cbind(facial.p3.t1, stressLevel)
+facial.p3.t1.L <- filter(facial.p3.t1, stressLevel == 0)
+write.csv(facial.p3.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p3.t1.L.csv")
+
+# Participant 4
+
+StressTime <- listOfStressTime[4,]
+EventTime <- listOfEventTime[4,]
+
+facial.p4.t2 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/402.csv") 
+facial.p4.t2 <- mutate(facial.p4.t2, accurateTime = as.character(facial.p4.t2$accurateTime)) %>% mutate(timeStamp = timeStamp -  as.numeric(substr(facial.p4.t2$accurateTime, 1, 7))*3600*1000)
+stressLevel <- sapply(facial.p4.t2$timeStamp, stressDemarcate)
+facial.p4.t2 <-cbind(facial.p4.t2, stressLevel)
+facial.p4.t2.L <- filter(facial.p4.t2, stressLevel == 1)
+write.csv(facial.p4.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p4.t2.L.csv")
+
+facial.p4.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/401.csv") 
+facial.p4.t1 <- mutate(facial.p4.t1, accurateTime = as.character(facial.p4.t1$accurateTime)) %>% mutate(timeStamp = timeStamp - as.numeric(substr(facial.p4.t1$accurateTime, 1, 7))*3600*1000)
+stressLevel <- sapply(facial.p4.t1$timeStamp, stressDemarcate2)
+facial.p4.t1 <- cbind(facial.p4.t1, stressLevel)
+facial.p4.t1.L <- filter(facial.p4.t1, stressLevel == 0)
+write.csv(facial.p4.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p4.t1.L.csv")
+
+
+
+
+# Participant 5
+StressTime <- listOfStressTime[5,]
+EventTime <- listOfEventTime[5,]
+facial.p5.t2 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/502.csv") 
+facial.p5.t2 <- mutate(facial.p5.t2, accurateTime = as.character(facial.p5.t2$accurateTime)) %>% mutate(timeStamp = timeStamp -  as.numeric(substr(facial.p5.t2$accurateTime, 1, 7))*3600*1000)
+stressLevel <- sapply(facial.p5.t2$timeStamp, stressDemarcate)
+facial.p5.t2 <-cbind(facial.p5.t2, stressLevel)
+facial.p5.t2.L <- filter(facial.p5.t2, stressLevel == 1)
+write.csv(facial.p5.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p5.t2.L.csv")
+
+facial.p5.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/501.csv") 
+facial.p5.t1 <- mutate(facial.p5.t1, accurateTime = as.character(facial.p5.t1$accurateTime)) %>% mutate(timeStamp = timeStamp - as.numeric(substr(facial.p5.t1$accurateTime, 1, 7))*3600*1000)
+stressLevel <- sapply(facial.p5.t1$timeStamp, stressDemarcate2)
+facial.p5.t1 <- cbind(facial.p5.t1, stressLevel)
+facial.p5.t1.L <- filter(facial.p5.t1, stressLevel == 0)
+write.csv(facial.p5.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p5.t1.L.csv")
+
+
+# Participant 6
+StressTime <- listOfStressTime[6,]
+EventTime <- listOfEventTime[6, ]
+facial.p6.t2 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/602.csv") 
+facial.p6.t2 <- mutate(facial.p6.t2, accurateTime = as.character(facial.p6.t2$accurateTime)) %>% mutate(timeStamp = timeStamp -  as.numeric(substr(facial.p6.t2$accurateTime, 1, 7))*3600*1000)
+stressLevel <- sapply(facial.p6.t2$timeStamp, stressDemarcate)
+facial.p6.t2 <-cbind(facial.p6.t2, stressLevel)
+facial.p6.t2.L <- filter(facial.p6.t2, stressLevel == 1)
+write.csv(facial.p6.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p6.t2.L.csv")
+
+facial.p6.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/601.csv") 
+facial.p6.t1 <- mutate(facial.p6.t1, accurateTime = as.character(facial.p6.t1$accurateTime)) %>% mutate(timeStamp = timeStamp - as.numeric(substr(facial.p6.t1$accurateTime, 1, 7))*3600*1000)
+stressLevel <- sapply(facial.p6.t1$timeStamp, stressDemarcate2)
+facial.p6.t1 <- cbind(facial.p6.t1, stressLevel)
+facial.p6.t1.L <- filter(facial.p6.t1, stressLevel == 0)
+write.csv(facial.p6.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p6.t1.L.csv")
+
+# Participant 7
+
+StressTime <- listOfStressTime[7,]
+EventTime <- listOfEventTime[7, ]
+facial.p7.t2 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/702.csv") 
+facial.p7.t2 <- mutate(facial.p7.t2, accurateTime = as.character(facial.p7.t2$accurateTime)) %>% mutate(timeStamp = timeStamp -  as.numeric(substr(facial.p7.t2$accurateTime, 1, 7))*3600*1000)
+stressLevel <- sapply(facial.p7.t2$timeStamp, stressDemarcate)
+facial.p7.t2 <-cbind(facial.p7.t2, stressLevel)
+facial.p7.t2.L <- filter(facial.p7.t2, stressLevel == 1)
+write.csv(facial.p7.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p7.t2.L.csv")
+
+facial.p7.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/701.csv") 
+facial.p7.t1 <- mutate(facial.p7.t1, accurateTime = as.character(facial.p7.t1$accurateTime)) %>% mutate(timeStamp = timeStamp - as.numeric(substr(facial.p7.t1$accurateTime, 1, 7))*3600*1000)
+stressLevel <- sapply(facial.p7.t1$timeStamp, stressDemarcate2)
+facial.p7.t1 <- cbind(facial.p7.t1, stressLevel)
+facial.p7.t1.L <- filter(facial.p7.t1, stressLevel == 0)
+write.csv(facial.p7.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p7.t1.L.csv")
+
+
+#Participant 8
+StressTime <- listOfStressTime[8,]
+EventTime <- listOfEventTime[8, ]
+facial.p8.t2 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/802.csv") 
+facial.p8.t2 <- mutate(facial.p8.t2, accurateTime = as.character(facial.p8.t2$accurateTime)) %>% mutate(timeStamp = timeStamp -  as.numeric(substr(facial.p8.t2$accurateTime, 1, 7))*3600*1000)
+stressLevel <- sapply(facial.p8.t2$timeStamp, stressDemarcate)
+facial.p8.t2 <-cbind(facial.p8.t2, stressLevel)
+facial.p8.t2.L <- filter(facial.p8.t2, stressLevel == 1)
+write.csv(facial.p8.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p8.t2.L.csv")
+
+facial.p8.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/801.csv") 
+facial.p8.t1 <- mutate(facial.p8.t1, accurateTime = as.character(facial.p8.t1$accurateTime)) %>% mutate(timeStamp = timeStamp - as.numeric(substr(facial.p8.t1$accurateTime, 1, 7))*3600*1000)
+stressLevel <- sapply(facial.p8.t1$timeStamp, stressDemarcate2)
+facial.p8.t1 <- cbind(facial.p8.t1, stressLevel)
+facial.p8.t1.L <- filter(facial.p8.t1, stressLevel == 0)
+write.csv(facial.p8.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p8.t1.L.csv")
+
+# Participant 9
+
+StressTime <- listOfStressTime[9,]
+EventTime <- listOfEventTime[9, ]
+facial.p9.t2 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/902.csv") 
+facial.p9.t2 <- mutate(facial.p9.t2, accurateTime = as.character(facial.p9.t2$accurateTime)) %>% mutate(timeStamp = timeStamp -  as.numeric(substr(facial.p9.t2$accurateTime, 1, 7))*3600*1000)
+stressLevel <- sapply(facial.p9.t2$timeStamp, stressDemarcate)
+facial.p9.t2 <-cbind(facial.p9.t2, stressLevel)
+facial.p9.t2.L <- filter(facial.p9.t2, stressLevel == 1)
+write.csv(facial.p9.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p9.t2.L.csv")
+
+facial.p9.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/901.csv") 
+facial.p9.t1 <- mutate(facial.p9.t1, accurateTime = as.character(facial.p9.t1$accurateTime)) %>% mutate(timeStamp = timeStamp - as.numeric(substr(facial.p9.t1$accurateTime, 1, 7))*3600*1000)
+stressLevel <- sapply(facial.p9.t1$timeStamp, stressDemarcate2)
+facial.p9.t1 <- cbind(facial.p9.t1, stressLevel)
+facial.p9.t1.L <- filter(facial.p9.t1, stressLevel == 0)
+write.csv(facial.p9.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p9.t1.L.csv")
+
+
+# Participant 10
+StressTime <- listOfStressTime[10,]
+EventTime <- listOfEventTime[10, ]
+facial.p10.t2 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/1002.csv") 
+facial.p10.t2 <- mutate(facial.p10.t2, accurateTime = as.character(facial.p10.t2$accurateTime)) %>% mutate(timeStamp = timeStamp -  as.numeric(substr(facial.p10.t2$accurateTime, 1, 7))*3600*1000)
+stressLevel <- sapply(facial.p10.t2$timeStamp, stressDemarcate)
+facial.p10.t2 <-cbind(facial.p10.t2, stressLevel)
+facial.p10.t2.L <- filter(facial.p10.t2, stressLevel == 1)
+write.csv(facial.p10.t2.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p10.t2.L.csv")
+
+facial.p10.t1 <- read.csv("/Volumes/DATA/人因学测量用素材/实验数据/面部特征/1001.csv") 
+facial.p10.t1 <- mutate(facial.p10.t1, accurateTime = as.character(facial.p10.t1$accurateTime)) %>% mutate(timeStamp = timeStamp - as.numeric(substr(facial.p10.t1$accurateTime, 1, 7))*3600*1000)
+stressLevel <- sapply(facial.p10.t1$timeStamp, stressDemarcate2)
+facial.p10.t1 <- cbind(facial.p10.t1, stressLevel)
+facial.p10.t1.L <- filter(facial.p10.t1, stressLevel == 0)
+write.csv(facial.p10.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p10.t1.L.csv")
+
+```
+
+
+### Combine them together
+
+```{r}
+facial.p2.L <- rbind(facial.p2.t1.L, facial.p2.t2.L)
+facial.p3.L <- rbind(facial.p3.t1.L, facial.p3.t2.L)
+facial.p4.L <- rbind(facial.p4.t1.L, facial.p4.t2.L)
+facial.p5.L <- rbind(facial.p5.t1.L, facial.p5.t2.L)
+facial.p6.L <- rbind(facial.p6.t1.L, facial.p6.t2.L)
+facial.p7.t2.L <- select(facial.p7.t2.L, -X)
+facial.p7.L <- rbind(facial.p7.t1.L, facial.p7.t2.L)
+facial.p8.L <- rbind(facial.p8.t1.L, facial.p8.t2.L)
+facial.p9.L <- rbind(facial.p9.t1.L, facial.p9.t2.L)
+facial.p10.L <- rbind(facial.p10.t1.L, facial.p10.t2.L)
+facial.pressure <- rbind(facial.p2.t2.L, facial.p3.t2.L, facial.p4.t2.L, facial.p5.t2.L, facial.p6.t2.L, facial.p7.t2.L, facial.p8.t2.L, facial.p9.t2.L, facial.p10.t2.L)
+
+write.csv(facial.p2.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p2.L.csv")
+write.csv(facial.p3.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p3.L.csv")
+write.csv(facial.p4.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p4.L.csv")
+write.csv(facial.p5.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p5.L.csv")
+write.csv(facial.p6.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p6.L.csv")
+write.csv(facial.p7.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p7.L.csv")
+write.csv(facial.p8.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p8.L.csv")
+write.csv(facial.p9.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p9.L.csv")
+write.csv(facial.p10.L, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.p10.L.csv")
+write.csv(facial.pressure, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.pressure.csv")
+
+
+facial.all <- rbind(facial.p2.L, facial.p3.L, facial.p4.L, facial.p5.L, facial.p6.L, facial.p7.L, facial.p8.L, facial.p9.L, facial.p10.L)
+write.csv(facial.all, file = "~/Documents/Graduate3/HFM/Group Project/实验数据/处理后/facial.all.csv")
+```
+
+
+
+### Explain the results
+
+```{r}
+library(pastecs)
+library(reshape)
+PCA <- read.csv("~/Documents/Graduate3/HFM/Group Project/实验数据/面部特征/PCA.csv", header=FALSE)
+PCA <- PCA[,1:52]
+PCA.summary <- stat.desc(PCA, basic = T, desc=T, norm = F, p=0.95)
+PCA.mean <- t(PCA.summary[9,])
+PCA.sd <- t(PCA.summary[12,])
+pca.mean.ordered <- sort(PCA.mean, decreasing = T)
+cumsum(pca.mean.ordered/sum(PCA.mean))
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
