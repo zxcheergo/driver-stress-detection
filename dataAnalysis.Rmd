@@ -6,6 +6,7 @@ output:
   html_document: 
     toc: yes
 ---
+# Helper functions
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -249,9 +250,14 @@ summarySEwithin <- function(data=NULL, measurevar, betweenvars=NULL, withinvars=
 }
 ```
 
+# Library
 
+```{r}
+library(dplyr)
+library(pROC)
+```
 
-## The perceived pressure of the 8 events
+# The perceived pressure of the 8 events
 
 First, we need to explore the subjective evaluation of the 8 events. The data are the participants' subjective evaluation of a scale of 0~100.
 Here we used the tool of repeated measure ANOVA.
@@ -262,18 +268,20 @@ subjective <- read_excel("~/Documents/Graduate3/HFM/Group Project/driver-stress-
 head(subjective)
 subjective <- data.frame(subjective)
 
-library(reshape)
-longData <- melt(subjective, id = "Participant", measured = c("E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8"))
+library(reshape2)
+longData <- melt(subjective, id.vars = "Participant", measure.vars = c("E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8"), variable.name = "event")
 names(longData) <- c("participant", "event", "pressure")
 longData$participant <- factor(longData$participant)
-longData$event <- factor(longData$event)
+longData$pressure <- as.numeric(longData$pressure)
 graph.subjective <- summarySEwithin(longData, measurevar = "pressure", withinvars = "event", idvar = "participant", na.rm = T, conf.interval = .95)
 graph.subjective
 
-
+library(ggplot2)
+ggplot(graph.subjective, aes(x=event, y=pressure, group=1)) + geom_line() + geom_errorbar(width=.1, aes(ymin=pressure-se, ymax=pressure+se)) + geom_point(shape=21, size=3, fill = "white")
+ggsave("subjective-pressure.png")
 ```
 
-## The physiological measurement data
+# The physiological measurement data
 
 ### Participant 1
 
@@ -978,7 +986,7 @@ part5.t1.event <- sapply(psy.p5.t1.event, meanOfEvent1)
 part5.t2.event <- sapply(psy.p5.t2.event, meanOfEvent1)
 ```
 
-## The driving data
+# The driving data
 
 In this part, we only be interested in the following parameters:
 
@@ -1635,9 +1643,9 @@ driving.p10.events <- rbind(driving.p10.event1, driving.p10.event2, driving.p10.
 ```
 
 
-## The facial Feature
+# The facial Feature
 
-### Manipulate the raw data
+## Manipulate the raw data
 
 ```{r}
 library(dplyr)
@@ -1696,7 +1704,8 @@ write.csv(facial.p1.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/driver
 
 
 ```
-# Participant2
+
+## Participants
 ```{r}
 library(dplyr)
 lT = 0.5
@@ -1898,7 +1907,7 @@ write.csv(facial.p10.t1.L, file = "~/Documents/Graduate3/HFM/Group Project/drive
 ```
 
 
-### Combine them together
+## Combine them together
 
 ```{r}
 facial.p2.L <- rbind(facial.p2.t1.L, facial.p2.t2.L)
@@ -1930,8 +1939,91 @@ write.csv(facial.all, file = "~/Documents/Graduate3/HFM/Group Project/driver-str
 ```
 
 
+## Feature selection
 
-### Explain the results
+We need to choose the features with the largest variance and delete those features almost don't change.
+```{r}
+library
+facial.all <- read.csv("~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.all.csv", header = TRUE)
+facial.all <- select(facial.all, -c(54:55)) %>%
+  rename(participant = X)
+```
+
+```{r}
+mystats <- function(x, na.omit = FALSE) {
+  if (na.omit)
+    x <- x[!is.na(x)]
+  m <- mean(x)
+  n <- length(x)
+  s <- sd(x)
+  return(c(n=n, mean=m, stdev=s))
+}
+stats <- sapply(facial.all, mystats)  
+stats <- t(data.frame(stats))
+write.csv(stats, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/statsForFacialFeatures.csv")
+```
+
+```{r}
+facial.p2.L <- read.csv(file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p2.L.csv") %>% select(-c("X", "tongueOut", "jawLeft", "mouthLeft", "mouthRight", "jawRight", "mouthClose", "browOuterUpRight", "browOuterUpLeft", "timeStamp", "accurateTime"))
+
+facial.p3.L <- read.csv("~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p3.L.csv") %>%  select(-c("X", "tongueOut", "jawLeft", "mouthLeft", "mouthRight", "jawRight", "mouthClose", "browOuterUpRight", "browOuterUpLeft", "timeStamp", "accurateTime"))
+facial.p4.L <- read.csv(file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p4.L.csv") %>% select(-c("X", "tongueOut", "jawLeft", "mouthLeft", "mouthRight", "jawRight", "mouthClose", "browOuterUpRight", "browOuterUpLeft", "timeStamp", "accurateTime"))
+facial.p5.L <- read.csv(file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p5.L.csv") %>% select(-c("X", "tongueOut", "jawLeft", "mouthLeft", "mouthRight", "jawRight", "mouthClose", "browOuterUpRight", "browOuterUpLeft", "timeStamp", "accurateTime"))
+facial.p6.L <- read.csv(file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p6.L.csv") %>% select(-c("X", "tongueOut", "jawLeft", "mouthLeft", "mouthRight", "jawRight", "mouthClose", "browOuterUpRight", "browOuterUpLeft", "timeStamp", "accurateTime"))
+facial.p7.L <- read.csv(file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p7.L.csv") %>% select(-c("X", "tongueOut", "jawLeft", "mouthLeft", "mouthRight", "jawRight", "mouthClose", "browOuterUpRight", "browOuterUpLeft", "timeStamp", "accurateTime"))
+facial.p8.L <- read.csv(file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p8.L.csv") %>% select(-c("X", "tongueOut", "jawLeft", "mouthLeft", "mouthRight", "jawRight", "mouthClose", "browOuterUpRight", "browOuterUpLeft", "timeStamp", "accurateTime"))
+facial.p9.L <- read.csv(file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p9.L.csv") %>% select(-c("X", "tongueOut", "jawLeft", "mouthLeft", "mouthRight", "jawRight", "mouthClose", "browOuterUpRight", "browOuterUpLeft", "timeStamp", "accurateTime"))
+
+facial.p10.L <- read.csv(file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p10.L.csv") %>% select(-c("X", "tongueOut", "jawLeft", "mouthLeft", "mouthRight", "jawRight", "mouthClose", "browOuterUpRight", "browOuterUpLeft", "timeStamp", "accurateTime"))
+
+facial.stress <- read.csv(file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.all.csv") %>% select(-c("X", "tongueOut", "jawLeft", "mouthLeft", "mouthRight", "jawRight", "mouthClose", "browOuterUpRight", "browOuterUpLeft", "timeStamp", "accurateTime"))
+
+write.csv(facial.p2.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p2.featureSelected.csv")
+write.csv(facial.p3.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p3.featureSelected.csv")
+write.csv(facial.p4.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p4.featureSelected.csv")
+write.csv(facial.p5.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p5.featureSelected.csv")
+write.csv(facial.p6.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p6.featureSelected.csv")
+write.csv(facial.p7.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p7.featureSelected.csv")
+write.csv(facial.p8.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p8.featureSelected.csv")
+write.csv(facial.p9.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p9.featureSelected.csv")
+write.csv(facial.p10.L, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.p10.featureSelected.csv")
+write.csv(facial.stress, file = "~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/实验数据/处理后/facial.stress.featureSelected.csv")
+
+```
+
+## ROC
+
+```{r}
+# import the prediction results
+kNN <- read.csv("~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/MATLAB/kNN.txt")
+Tree <- read.csv("~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/MATLAB/Tree.txt")
+LDA <- read.csv("~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/MATLAB/LDA.txt")
+SVM <- read.csv("~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/MATLAB/SVM.txt")
+Log <- read.csv("~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/MATLAB/Log.txt")
+Bys <- read.csv("~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/MATLAB/Bys.txt")
+Boost <- read.csv("~/Documents/Graduate3/HFM/Group Project/driver-stress-detection/MATLAB/Boost.txt")
+```
+
+```{r}
+# draw the ROC
+rockNN <- roc(kNN$stressLevel, kNN$predict)
+plot(rockNN, print.auc = T, plot = T, print.thres = T, smooth = T, asp = 0)
+rocTree <- roc(Tree$stressLevel, Tree$predict)
+plot(rocTree, print.auc = T, plot = T, print.thres = T, smooth = T, asp = 0)
+rocLDA <- roc(LDA$stressLevel, LDA$predict)
+plot(rocLDA, print.auc = T, plot = T, print.thres = T, smooth = T, asp = 0)
+rocSVM <- roc(SVM$stressLevel, SVM$predict)
+rocLog <- roc(Log$stressLevel, Log$predict)
+rocBys <- roc(Bys$stressLevel, Bys$predict)
+rocBoost <- roc(Boost$stressLevel, Boost$predict)
+plot(rocSVM, print.auc = T, plot = T, print.thres = T, smooth = T, asp = 0)
+plot(rocLog, print.auc = T, plot = T, print.thres = T, smooth = T, asp = 0)
+plot(rocBys, print.auc = T, plot = T, print.thres = T, smooth = T, asp = 0)
+plot(rocBoost, print.auc = T, plot = T, print.thres = T, smooth = T, asp = 0)
+
+```
+
+## Explain the results
 
 ```{r}
 library(pastecs)
